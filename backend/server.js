@@ -8,6 +8,8 @@ const visitRoutes = require('./routes/visitRoutes'); // <-- Import new routes
 const userRoutes = require('./routes/userRoutes'); // <-- Import
 const chatRoutes = require('./routes/chatRoutes'); // <-- Import chat routes
 const analyzeRoutes = require('./routes/analyzeRoutes'); // <-- Import analyze routes
+const Routine = require('./models/Routine');
+const SkinAnalysis = require('./models/SkinAnalysis');
 
 
 const app = express();
@@ -28,7 +30,7 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB connection
-mongoose.connect('mongodb://localhost:27017/renthub_db', {
+mongoose.connect('mongodb://localhost:27017/wrapskinwise', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => console.log('MongoDB connected'))

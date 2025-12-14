@@ -105,7 +105,7 @@ const Navbar = () => {
               </div>
 
               <ThemeToggle />
-
+              
               {/* AUTH */}
               {user ? (
                 <div className="flex items-center gap-3">
