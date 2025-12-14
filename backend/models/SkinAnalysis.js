@@ -9,8 +9,7 @@ const skinAnalysisSchema = new mongoose.Schema(
     },
 
     imageUrl: {
-      type: String,
-      required: true,
+      type: String
     },
 
     detectedIssues: {

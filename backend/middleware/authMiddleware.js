@@ -1,25 +1,41 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-const jwtSecret = process.env.JWT_SECRET;
-
-const authMiddleware = (req, res, next) => {
-    console.log("Auth middleware triggered"); 
-    console.log("Auth middleware: Request headers:", req.headers); 
-  const authHeader = req.headers.authorization;
-  console.log("Auth middleware: Authorization header:", authHeader); // Log the authorization header
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'No token provided' });
-  }
-
-  const token = authHeader.split(' ')[1];
-    console.log("Auth middleware: Extracted token:", token); // Log the extracted token
+/**
+ * Auth Middleware
+ * - Verifies JWT
+ * - Attaches logged-in user to req.user
+ */
+const authMiddleware = async (req, res, next) => {
   try {
+    // 1️⃣ Get token from header
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Authorization token missing' });
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    // 2️⃣ Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = { id: decoded.id }; 
+
+    // 3️⃣ Fetch user
+    const user = await User.findById(decoded.id).select('-password');
+
+    if (!user) {
+      return res.status(401).json({ message: 'User no longer exists' });
+    }
+
+    // 4️⃣ Attach user to request
+    req.user = user;
+
+    // 5️⃣ Continue
     next();
-  } catch (err) {
-    console.error("Token verification failed:", err);
-    return res.status(401).json({ message: 'Token is not valid' });
+
+  } catch (error) {
+    console.error('Auth Middleware Error:', error.message);
+    return res.status(401).json({ message: 'Invalid or expired token' });
   }
 };
 

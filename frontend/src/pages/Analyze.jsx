@@ -104,7 +104,7 @@ export default function Analyze() {
       };
 
       formData.append('metadata', JSON.stringify(metadata));
-      if (imageFile) formData.append('image', imageFile);
+      //if (imageFile) formData.append('image', imageFile);
 
       // Replace base URL depending on your environment:
       // - In dev you might proxy /api to your backend; then use '/api/analyze'
@@ -112,13 +112,16 @@ export default function Analyze() {
       const base = import.meta.env.VITE_API_BASE_URL || '';
       const endpoint = `${base}/api/analyze`;
 
-      const res = await axios.post(endpoint, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 120000, // 2 minutes
-        onUploadProgress: (p) => {
-          // optionally show progress (p.loaded / p.total)
-        }
-      });
+      const token = localStorage.getItem('token');
+
+const res = await axios.post(endpoint, formData, {
+  headers: {
+    'Content-Type': 'multipart/form-data',
+    Authorization: `Bearer ${token}`,
+  },
+  timeout: 120000,
+});
+
 
       setResult(res.data);
       // Optionally navigate to a result page:
