@@ -1,6 +1,0 @@
-# recommendation-service/requirements.txt
-Flask
-scikit-learn
-pandas
-flask-cors
-scipy

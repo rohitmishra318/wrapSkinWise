@@ -103,8 +103,9 @@ export default function Analyze() {
         timestamp: new Date().toISOString(),
       };
 
-      formData.append('metadata', JSON.stringify(metadata));
-      //if (imageFile) formData.append('image', imageFile);
+     // formData.append('metadata', JSON.stringify(metadata));
+      if (imageFile) formData.append('image', imageFile);
+      console.log('Submitting metadata:', metadata);
 
       // Replace base URL depending on your environment:
       // - In dev you might proxy /api to your backend; then use '/api/analyze'
