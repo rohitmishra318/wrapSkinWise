@@ -10,6 +10,7 @@ const chatRoutes = require('./routes/chatRoutes'); // <-- Import chat routes
 const analyzeRoutes = require('./routes/analyzeRoutes'); // <-- Import analyze routes
 const Routine = require('./models/Routine');
 const SkinAnalysis = require('./models/SkinAnalysis');
+const blogRoutes = require('./routes/blogRoutes'); // <-- Import blog routes
 
 
 const app = express();
@@ -43,6 +44,8 @@ app.use('/api/visits', visitRoutes); // <-- Use the new routes
 app.use('/api/users', userRoutes); // <-- Use the user routes
 app.use('/api/chats', chatRoutes); // <-- Use chat routes
 app.use('/api/analyze', analyzeRoutes); // <-- Use analyze routes
+app.use('/api/blogs', blogRoutes); // <-- Use blog routes
+
 
 // Helper to create a consistent, private room name
 const createPrivateRoomName = (userId1, userId2) => {

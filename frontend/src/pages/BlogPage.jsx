@@ -1,127 +1,114 @@
-import React, { useState } from 'react';
-
-const posts = [
-  {
-    id: 1,
-    title: "The Perfect Acne-Prone Skin Routine",
-    excerpt:
-      "Effective acne care starts with cleansing, gentle hydration, active treatment, and SPF protection.",
-    content: (
-      <>
-        <p>
-          A proven acne routine begins with twice-daily cleansing using a mild cleanser
-          to remove oil and bacteria. This should be followed by hydration using
-          hyaluronic acid to support the skin barrier.
-        </p>
-        <p>
-          Targeted treatments such as niacinamide or salicylic acid can be applied
-          directly on breakouts. Always seal your routine with a moisturizer and
-          apply sunscreen every morning to prevent dark acne marks.
-        </p>
-      </>
-    ),
-  },
-  {
-    id: 2,
-    title: "Science-Backed Skincare Routines",
-    excerpt:
-      "Build a daily routine that improves barrier health, brightness, and hydration.",
-    content: (
-      <>
-        <p>
-          Dermatologists recommend cleansing to remove pollution and debris so that
-          serums and moisturizers absorb effectively into the skin.
-        </p>
-        <p>
-          Consistent use of vitamin C in the morning and sunscreen helps prevent
-          pigmentation, premature aging, and dullness.
-        </p>
-      </>
-    ),
-  },
-  {
-    id: 3,
-    title: "Pigmentation Care & Tips",
-    excerpt:
-      "Understand how pigmentation forms and how gentle exfoliation can improve tone.",
-    content: (
-      <>
-        <p>
-          Pigmentation occurs when melanin clusters in specific areas such as acne
-          scars or sun spots. Gentle exfoliation using AHAs like glycolic acid helps
-          remove dead skin layers.
-        </p>
-        <p>
-          Double cleansing — oil cleanser followed by a water-based cleanser —
-          ensures sunscreen and makeup are completely removed, improving treatment
-          effectiveness.
-        </p>
-      </>
-    ),
-  },
-  {
-    id: 4,
-    title: "Eat for Healthy Skin",
-    excerpt:
-      "Nutrition plays a vital role in hydration, glow, and skin repair.",
-    content: (
-      <>
-        <p>
-          Vitamin C–rich fruits such as oranges, strawberries, and apples help boost
-          collagen production and strengthen antioxidant protection.
-        </p>
-        <p>
-          Drinking enough water and eating antioxidant-rich foods reduces inflammation
-          and supports faster skin healing.
-        </p>
-      </>
-    ),
-  },
-];
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
 export default function BlogPage() {
+  const [blogs, setBlogs] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const skinType = 'acne'; // later → from profile / quiz result
+
+  useEffect(() => {
+    async function fetchBlogs() {
+      try {
+        const token = localStorage.getItem('token');
+
+        const res = await axios.get(
+          `http://localhost:5000/api/blogs?skinType=${skinType}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+
+        setBlogs(res.data.blogs);
+      } catch (err) {
+        setError('Failed to load blogs');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchBlogs();
+  }, []);
+
+  if (loading) {
+    return <p className="text-center mt-10">Loading blogs…</p>;
+  }
+
+  if (error) {
+    return <p className="text-center text-red-500 mt-10">{error}</p>;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-gray-900 text-slate-800 dark:text-gray-100">
       <div className="max-w-5xl mx-auto px-4 py-12 space-y-8">
 
         <h1 className="text-4xl font-extrabold text-center">
-          SkinWise Blog — Tips & Science
+          SkinWise Blog — Personalized Reads
         </h1>
+
+         {blogs.length === 0 && (
+  <p className="text-center text-gray-500">
+    No blogs found for this skin type.
+  </p>
+)}
 
         {!selected ? (
           <div className="space-y-6">
-            {posts.map((post) => (
+            {blogs.map(blog => (
               <div
-                key={post.id}
-                className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm hover:shadow-md transition"
+                key={blog.id}
+                className="bg-white dark:bg-gray-800 p-6 rounded-xl border shadow-sm"
               >
-                <h2 className="text-2xl font-semibold">{post.title}</h2>
+                <h2 className="text-2xl font-semibold">{blog.title}</h2>
                 <p className="mt-2 text-slate-600 dark:text-gray-300">
-                  {post.excerpt}
+                  {blog.excerpt}
                 </p>
-                <button
-                  onClick={() => setSelected(post)}
-                  className="mt-4 text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
-                >
-                  Read More →
-                </button>
+
+                <div className="mt-4 flex justify-between items-center">
+                  <button
+                    onClick={() => setSelected(blog)}
+                    className="text-indigo-600 hover:underline"
+                  >
+                    Read More →
+                  </button>
+
+                  <a
+                    href={blog.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-gray-500 hover:underline"
+                  >
+                    Original Source
+                  </a>
+                </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl">
             <button
               onClick={() => setSelected(null)}
-              className="text-sm text-indigo-500 hover:underline mb-4"
+              className="text-indigo-500 mb-4 hover:underline"
             >
-              ← Back to Posts
+              ← Back
             </button>
-            <h2 className="text-3xl font-bold mb-4">{selected.title}</h2>
-            <div className="space-y-4 text-slate-700 dark:text-gray-300">
-              {selected.content}
-            </div>
+
+            <h2 className="text-3xl font-bold">{selected.title}</h2>
+            <p className="mt-4 text-gray-600">
+              Read full article from the original blog.
+            </p>
+
+            <a
+              href={selected.url}
+              target="_blank"
+              className="mt-4 inline-block text-indigo-600 hover:underline"
+            >
+              Open Article →
+            </a>
           </div>
         )}
       </div>
