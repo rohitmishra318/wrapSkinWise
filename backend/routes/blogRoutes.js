@@ -3,37 +3,38 @@ const axios = require('axios');
 
 const router = express.Router();
 
+/**
+ * GET /api/blogs?search=acne
+ * GET /api/blogs        -> default skincare blogs
+ */
 router.get('/', async (req, res) => {
   try {
-    const skinType = req.query.skinType || 'skincare';
-
-    console.log('Fetching blogs for:', skinType);
-    console.log('API KEY:', process.env.TWINGLY_API_KEY);
+    const searchQuery = req.query.search || 'skincare';
 
     const response = await axios.get(
       'https://api.twingly.com/blog/search/api/v3/search',
       {
         params: {
           apikey: process.env.TWINGLY_API_KEY,
-          q: `${skinType} OR skincare`,
+          q: searchQuery,
           format: 'json',
-          max: 10
-        }
+          max: 10,              // 🔥 ONLY 10 blogs
+          sort: 'published'     // latest first
+        },
+        timeout: 8000           // prevent long hangs
       }
     );
-
-    console.log('RAW RESPONSE:', response.data);
 
     const posts =
       response.data?.posts ||
       response.data?.documents ||
       [];
 
-    const blogs = posts.map((post, index) => ({
+    const blogs = posts.slice(0, 10).map((post, index) => ({
       id: post.id || index,
-      title: post.title,
+      title: post.title || 'Untitled',
       excerpt: post.text
-        ? post.text.slice(0, 180) + '...'
+        ? post.text.slice(0, 160) + '...'
         : 'Read full article',
       url: post.url,
       publishedAt: post.published
@@ -42,11 +43,8 @@ router.get('/', async (req, res) => {
     res.json({ blogs });
 
   } catch (err) {
-    console.error(
-      'Twingly error:',
-      err.response?.data || err.message
-    );
-    res.status(500).json({ message: 'Blog fetch failed' });
+    console.error('Blog fetch error:', err.message);
+    res.status(500).json({ message: 'Failed to fetch blogs' });
   }
 });
 
