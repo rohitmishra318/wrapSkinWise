@@ -7,23 +7,16 @@ import Analyze from './pages/Analyze.jsx';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HomePage from './pages/Homepage';
-import PropertyDetailsPage from './pages/PropertyDetailsPage';
 import ConsultationPage from './pages/ConsultationPage.jsx';
-import AddPropertyPage from './pages/AddPropertyPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage.jsx';
-import EditPropertyPage from './pages/EditPropertyPage';
-import InboxPage from './pages/ChatPage.jsx';
-import FavoritesPage from './pages/FavoritesPage';
-import VisitsPage from './pages/VisitsPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute'; 
 import QuizPage from './pages/QuizPage.jsx';
 import RoutinePage from './pages/Routine.jsx';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import socket from '../socket';
 import Profile from './pages/ProfilePage.jsx';
 import { ThemeProvider } from './context/ThemeContext'; 
 import BlogPage from './pages/BlogPage.jsx';
@@ -55,27 +48,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-const RealtimeNotificationHandler = () => {
-  const { user } = useAuth();
 
-  useEffect(() => {
-    if (user && user.id) {
-      socket.emit('joinUserRoom', user.id);
-
-      const handleVisitUpdate = (visit) => {
-        toast.info(`Your visit request has been ${visit.status}!`);
-      };
-
-      socket.on('visitStatusUpdate', handleVisitUpdate);
-
-      return () => {
-        socket.off('visitStatusUpdate', handleVisitUpdate);
-      };
-    }
-  }, [user]);
-
-  return null;
-};
 // ---------------------------------------------------------
 
 function App() {
@@ -85,7 +58,7 @@ function App() {
            <ThemeProvider>
         <ErrorBoundary>
           <ToastContainer position="top-right" autoClose={5000} />
-          <RealtimeNotificationHandler />
+          
           
           <div className="font-sans antialiased bg-gray-100 dark:bg-gray-900 min-h-screen flex flex-col">
             <Navbar />
@@ -93,7 +66,6 @@ function App() {
               <Routes>
                 {/* --- Public Routes --- */}
                 <Route path="/" element={<HomePage />} />
-                <Route path="/properties/:id" element={<PropertyDetailsPage />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/register" element={<RegisterPage />} />
@@ -108,11 +80,7 @@ function App() {
 
                 {/* --- Protected Routes --- */}
                 <Route element={<ProtectedRoute />}>
-                  <Route path="/add-property" element={<AddPropertyPage />} />
-                  <Route path="/edit-property/:id" element={<EditPropertyPage />} />
-                  <Route path="/inbox" element={<InboxPage />} />
-                  <Route path="/visits" element={<VisitsPage />} />
-                  <Route path="/favorites" element={<FavoritesPage />} />
+                  
                   {/* Add any other future protected routes here */}
                 </Route>
               </Routes>
