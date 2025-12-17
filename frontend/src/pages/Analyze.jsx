@@ -103,7 +103,7 @@ export default function Analyze() {
         timestamp: new Date().toISOString(),
       };
 
-     // formData.append('metadata', JSON.stringify(metadata));
+      formData.append('metadata', JSON.stringify(metadata));
       if (imageFile) formData.append('image', imageFile);
       console.log('Submitting metadata:', metadata);
 
@@ -125,6 +125,8 @@ const res = await axios.post(endpoint, formData, {
 
 
       setResult(res.data);
+      console.log('Analysis result:', res.data);
+      console.log(result);
       // Optionally navigate to a result page:
       // navigate(`/result/${res.data.id}`);
     } catch (err) {
@@ -258,31 +260,49 @@ const res = await axios.post(endpoint, formData, {
           )}
 
           {/* show detector outputs (safe rendering if keys missing) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-3 border rounded">
-              <div className="text-sm text-gray-600">Acne</div>
-              <div className="font-medium text-gray-800">{result.acne?.label ?? 'N/A'}</div>
-              {result.acne?.count != null && <div className="text-xs text-gray-500">Count: {result.acne.count}</div>}
-            </div>
+          {result && result.analysis && (
+  <div className="mt-6 bg-white dark:bg-gray-800 p-5 rounded shadow-sm">
+    <h2 className="text-lg font-semibold mb-3">Analysis Results</h2>
 
-            <div className="p-3 border rounded">
-              <div className="text-sm text-gray-600">Blackheads</div>
-              <div className="font-medium text-gray-800">{result.blackheads?.present ? 'Present' : (result.blackheads?.present === false ? 'None' : 'N/A')}</div>
-              {result.blackheads?.count != null && <div className="text-xs text-gray-500">Count: {result.blackheads.count}</div>}
-            </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="p-3 border rounded">
+        <div className="text-sm text-gray-600">Acne</div>
+        <div className="font-medium">
+          {result.analysis.detectedIssues.acne}
+        </div>
+      </div>
 
-            <div className="p-3 border rounded">
-              <div className="text-sm text-gray-600">Wrinkles</div>
-              <div className="font-medium text-gray-800">{result.wrinkles?.label ?? 'N/A'}</div>
-              {result.wrinkles?.edge_density != null && <div className="text-xs text-gray-500">Edge density: {result.wrinkles.edge_density}</div>}
-            </div>
+      <div className="p-3 border rounded">
+        <div className="text-sm text-gray-600">Blackheads</div>
+        <div className="font-medium">
+          {result.analysis.detectedIssues.blackheads}
+        </div>
+      </div>
 
-            <div className="p-3 border rounded">
-              <div className="text-sm text-gray-600">Pigmentation</div>
-              <div className="font-medium text-gray-800">{result.pigmentation?.label ?? 'N/A'}</div>
-              {result.pigmentation?.count != null && <div className="text-xs text-gray-500">Patches: {result.pigmentation.count}</div>}
-            </div>
-          </div>
+      <div className="p-3 border rounded">
+        <div className="text-sm text-gray-600">Wrinkles</div>
+        <div className="font-medium">
+          {result.analysis.detectedIssues.wrinkles}
+        </div>
+      </div>
+
+      <div className="p-3 border rounded">
+        <div className="text-sm text-gray-600">Pigmentation</div>
+        <div className="font-medium">
+          {result.analysis.detectedIssues.pigmentation}
+        </div>
+      </div>
+    </div>
+
+    <div className="mt-4 p-3 bg-rose-50 rounded">
+      <h3 className="font-medium">Recommendations</h3>
+      <p className="text-sm whitespace-pre-wrap">
+        {result.analysis.notes}
+      </p>
+    </div>
+  </div>
+)}
+
 
           {/* Optional recommendations */}
           {result.recommendations && (

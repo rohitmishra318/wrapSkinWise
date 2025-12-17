@@ -10,7 +10,7 @@ const authMiddleware = async (req, res, next) => {
   try {
     // 1️⃣ Get token from header
     const authHeader = req.headers.authorization;
-
+    console.log('Auth Header:', authHeader);
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ message: 'Authorization token missing' });
     }
@@ -26,7 +26,7 @@ const authMiddleware = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({ message: 'User no longer exists' });
     }
-
+     console.log('Authenticated User:', user.username);
     // 4️⃣ Attach user to request
     req.user = user;
 
