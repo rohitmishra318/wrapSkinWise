@@ -21,6 +21,7 @@ import Profile from './pages/ProfilePage.jsx';
 import { ThemeProvider } from './context/ThemeContext'; 
 import BlogPage from './pages/BlogPage.jsx';
 import AdvicePage from './pages/AdvicePage.jsx';
+import AdminDashboard from './pages/AdminDashboard.jsx';
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);

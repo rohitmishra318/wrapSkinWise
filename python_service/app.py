@@ -3,164 +3,168 @@ import cv2
 import numpy as np
 from PIL import Image
 import io
+import mediapipe as mp
+
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 
 app = Flask(__name__)
 
-# ---------------- Load Haar Cascades ----------------
-face_cascade = cv2.CascadeClassifier(
-    cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+# ---------------- MediaPipe Tasks Setup ----------------
+MODEL_PATH = "face_landmarker.task"
+
+base_options = python.BaseOptions(model_asset_path=MODEL_PATH)
+options = vision.FaceLandmarkerOptions(
+    base_options=base_options,
+    num_faces=1,
+    output_face_blendshapes=False,
+    output_facial_transformation_matrixes=False,
 )
-eye_cascade = cv2.CascadeClassifier(
-    cv2.data.haarcascades + 'haarcascade_eye.xml'
-)
+
+face_landmarker = vision.FaceLandmarker.create_from_options(options)
+
+# ---------------- Landmark Groups ----------------
+LEFT_EYE = list(range(33, 133))
+RIGHT_EYE = list(range(362, 463))
+LIPS = list(range(61, 88))
+LEFT_EYEBROW = list(range(70, 107))
+RIGHT_EYEBROW = list(range(336, 377))
 
 # ---------------- Utility ----------------
 def read_image(file):
     image = Image.open(io.BytesIO(file.read())).convert("RGB")
-    return cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+    return np.array(image)
 
-# ---------------- Skin Mask (Ignore eyes & eyebrows) ----------------
+# ---------------- Skin Mask using Face Landmarker ----------------
 def create_skin_mask(img):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    mask = np.ones(gray.shape, dtype=np.uint8) * 255
+    h, w, _ = img.shape
+    mask = np.ones((h, w), dtype=np.uint8) * 255
 
-    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+    mp_image = mp.Image(
+        image_format=mp.ImageFormat.SRGB,
+        data=img
+    )
 
-    for (x, y, w, h) in faces:
-        face_gray = gray[y:y+h, x:x+w]
-        eyes = eye_cascade.detectMultiScale(face_gray, 1.3, 5)
+    result = face_landmarker.detect(mp_image)
 
-        for (ex, ey, ew, eh) in eyes:
-            eyebrow_y = max(0, y + ey - int(0.6 * eh))
-            eyebrow_h = ey + eh
+    if not result.face_landmarks:
+        return mask
 
-            mask[
-                eyebrow_y : eyebrow_y + eyebrow_h,
-                x + ex : x + ex + ew
-            ] = 0
+    landmarks = result.face_landmarks[0]
+
+    def remove(indices):
+        pts = []
+        for idx in indices:
+            x = int(landmarks[idx].x * w)
+            y = int(landmarks[idx].y * h)
+            pts.append([x, y])
+        pts = np.array(pts, dtype=np.int32)
+        cv2.fillPoly(mask, [pts], 0)
+
+    remove(LEFT_EYE)
+    remove(RIGHT_EYE)
+    remove(LIPS)
+    remove(LEFT_EYEBROW)
+    remove(RIGHT_EYEBROW)
 
     return mask
 
 # ---------------- Acne Detection ----------------
 def detect_acne(img, mask):
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
 
     lower1 = np.array([0, 60, 60])
     upper1 = np.array([10, 255, 255])
     lower2 = np.array([170, 60, 60])
     upper2 = np.array([180, 255, 255])
 
-    red_mask = cv2.inRange(hsv, lower1, upper1) + cv2.inRange(hsv, lower2, upper2)
-    red_mask = cv2.bitwise_and(red_mask, red_mask, mask=mask)
+    red = cv2.inRange(hsv, lower1, upper1) + cv2.inRange(hsv, lower2, upper2)
+    red = cv2.bitwise_and(red, red, mask=mask)
 
-    contours, _ = cv2.findContours(red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    acne_count = sum(1 for c in contours if 30 < cv2.contourArea(c) < 300)
+    contours, _ = cv2.findContours(red, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    count = sum(1 for c in contours if 25 < cv2.contourArea(c) < 250)
 
-    label = "High" if acne_count > 15 else "Moderate" if acne_count > 5 else "Low"
-
-    return {"label": label, "count": acne_count}
+    label = "High" if count > 15 else "Moderate" if count > 5 else "Low"
+    return {"label": label, "count": count}
 
 # ---------------- Blackheads ----------------
 def detect_blackheads(img, mask):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (7, 7), 0)
-
-    _, thresh = cv2.threshold(blurred, 55, 255, cv2.THRESH_BINARY_INV)
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    blur = cv2.GaussianBlur(gray, (7, 7), 0)
+    _, thresh = cv2.threshold(blur, 55, 255, cv2.THRESH_BINARY_INV)
     thresh = cv2.bitwise_and(thresh, thresh, mask=mask)
 
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    blackheads = [c for c in contours if 5 < cv2.contourArea(c) < 40]
+    count = sum(1 for c in contours if 5 < cv2.contourArea(c) < 40)
 
-    return {
-        "present": len(blackheads) > 6,
-        "count": len(blackheads)
-    }
+    return {"present": count > 5, "count": count}
 
 # ---------------- Wrinkles ----------------
 def detect_wrinkles(img, mask):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     edges = cv2.Canny(gray, 60, 160)
     edges = cv2.bitwise_and(edges, edges, mask=mask)
 
-    edge_density = np.sum(edges > 0) / np.sum(mask > 0)
+    density = np.sum(edges > 0) / np.sum(mask > 0)
+    label = "Visible" if density > 0.035 else "Low"
 
-    label = "Visible" if edge_density > 0.035 else "Low"
-
-    return {
-        "label": label,
-        "edge_density": round(edge_density, 4)
-    }
+    return {"label": label, "edge_density": round(density, 4)}
 
 # ---------------- Pigmentation ----------------
 def detect_pigmentation(img, mask):
-    lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
     l, _, _ = cv2.split(lab)
 
-    mean_l = np.mean(l[mask > 0])
-    dark_pixels = (l < (mean_l - 18)) & (mask > 0)
+    mean = np.mean(l[mask > 0])
+    std = np.std(l[mask > 0])
 
-    count = np.sum(dark_pixels)
-    label = "High" if count > 3500 else "Moderate" if count > 1800 else "Low"
+    dark = (l < (mean - 1.2 * std)) & (mask > 0)
+    count = np.sum(dark)
 
-    return {
-        "label": label,
-        "count": int(count / 120)
-    }
+    label = "High" if count > 3000 else "Moderate" if count > 1500 else "Low"
+    return {"label": label, "count": int(count / 100)}
 
-# ---------------- Dynamic Recommendations ----------------
-def generate_recommendations(result):
+# ---------------- Recommendations ----------------
+def generate_recommendations(r):
     recs = []
 
-    acne = result["acne"]
-    pigmentation = result["pigmentation"]
-    wrinkles = result["wrinkles"]
-    blackheads = result["blackheads"]
-
-    if acne["label"] == "High":
-        recs.append("🔴 Acne (High): Use Salicylic Acid 1–2%, Niacinamide daily, Retinol at night. Avoid sugary & oily food.")
-    elif acne["label"] == "Moderate":
-        recs.append("🟠 Acne (Moderate): Gentle cleanser, Aloe Vera gel, Multani Mitti mask weekly.")
+    if r["acne"]["label"] == "High":
+        recs.append("🔴 High acne: Salicylic Acid, Niacinamide, Retinol.")
+    elif r["acne"]["label"] == "Moderate":
+        recs.append("🟠 Moderate acne: Gentle cleanser + Aloe Vera.")
     else:
-        recs.append("🟢 Acne (Low): Maintain hygiene and oil-free moisturizer.")
+        recs.append("🟢 Acne under control.")
 
-    if blackheads["present"]:
-        recs.append("⚫ Blackheads: Steam once a week, use BHA or Rice Flour + Honey scrub.")
+    if r["pigmentation"]["label"] != "Low":
+        recs.append("🟤 Pigmentation: Vitamin C + SPF 50.")
 
-    if pigmentation["label"] == "High":
-        recs.append("🟤 Pigmentation (High): Vitamin C in morning, Retinol at night, Sunscreen SPF 50 mandatory.")
-    elif pigmentation["label"] == "Moderate":
-        recs.append("🟠 Pigmentation (Moderate): Niacinamide daily, Aloe Vera + Turmeric mask twice weekly.")
-    else:
-        recs.append("🟢 Pigmentation (Low): Continue sunscreen and hydration.")
+    if r["wrinkles"]["label"] == "Visible":
+        recs.append("🧓 Wrinkles: Retinol + Hyaluronic Acid.")
 
-    if wrinkles["label"] == "Visible":
-        recs.append("🧓 Wrinkles: Retinol 0.25% twice weekly, Hyaluronic Acid, daily SPF.")
-    else:
-        recs.append("🙂 Wrinkles (Low): Maintain hydration and sun protection.")
-
-    recs.append("💧 Lifestyle: Drink 2–3L water, sleep 7–8 hrs, avoid smoking, eat Vitamin-C rich fruits.")
+    recs.append("💧 Hydration, sleep 7–8 hrs, avoid smoking.")
 
     return "\n\n".join(recs)
 
 # ---------------- API ----------------
-@app.route('/analyze-image', methods=['POST'])
+@app.route("/analyze-image", methods=["POST"])
 def analyze():
-    if 'image' not in request.files:
-        return jsonify({"error": "Image not provided"}), 400
+    if "image" not in request.files:
+        return jsonify({"error": "Image missing"}), 400
 
-    img = read_image(request.files['image'])
-    skin_mask = create_skin_mask(img)
+    img = read_image(request.files["image"])
+    mask = create_skin_mask(img)
 
     analysis = {
-        "acne": detect_acne(img, skin_mask),
-        "blackheads": detect_blackheads(img, skin_mask),
-        "wrinkles": detect_wrinkles(img, skin_mask),
-        "pigmentation": detect_pigmentation(img, skin_mask)
+        "acne": detect_acne(img, mask),
+        "blackheads": detect_blackheads(img, mask),
+        "wrinkles": detect_wrinkles(img, mask),
+        "pigmentation": detect_pigmentation(img, mask),
     }
 
     analysis["recommendations"] = generate_recommendations(analysis)
+    analysis["modelVersion"] = "mediapipe-tasks-v1"
 
     return jsonify(analysis)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(port=7000, debug=True)

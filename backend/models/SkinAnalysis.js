@@ -15,7 +15,7 @@ const skinAnalysisSchema = new mongoose.Schema(
      
      modelVersion: {
       type: String,
-      default: 'opencv-v1'
+      default: 'mediapipe_face_mesh'
     },
 
     detectedIssues: {
