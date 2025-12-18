@@ -29,7 +29,7 @@ const Navbar = () => {
   const { user, logout } = useAuth() || { user: null, logout: () => {} };
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-
+  console.log('Navbar user:', user);
   const handleLogout = async () => {
     try {
       await logout();
@@ -120,7 +120,7 @@ const Navbar = () => {
                   <Menu as="div" className="relative">
                     <Menu.Button className="inline-flex items-center gap-2 rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-2 text-sm">
                       <User size={16} />
-                      <span className="hidden sm:inline">{user.username || 'You'}</span>
+                      <span className="hidden sm:inline">{user.name || 'You'}</span>
                       <ChevronDown size={14} />
                     </Menu.Button>
 

@@ -3,26 +3,33 @@ const mongoose = require('mongoose');
 const skinAnalysisSchema = new mongoose.Schema(
   {
     user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
+  type: String, // Firebase UID
+  required: true,
+  index: true,
+}
+,
 
     imageUrl: {
       type: String
     },
+     
+     modelVersion: {
+      type: String,
+      default: 'opencv-v1'
+    },
 
     detectedIssues: {
-      acne: Number,
-      pigmentation: Number,
-      wrinkles: Number,
-      blackheads: Number,
-    },
+  acne: { count: Number, label: String },
+  pigmentation: { count: Number, label: String },
+  wrinkles: { density: Number, label: String },
+  blackheads: { count: Number },
+},
 
     overallScore: {
       type: Number, // 0–100
     },
-
+    
+    
     notes: String,
   },
   { timestamps: true }

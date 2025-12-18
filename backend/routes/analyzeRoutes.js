@@ -39,6 +39,7 @@ router.post(
       );
 
       const data = flaskRes.data;
+      console.log('Flask response data:', data);
 
       /* -------- Normalize results -------- */
       const detectedIssues = {
@@ -50,30 +51,35 @@ router.post(
         blackheads: data.blackheads?.count || 0,
       };
 
-      const overallScore = Math.min(
-        100,
-        Math.round(
-          (detectedIssues.acne +
-            detectedIssues.pigmentation +
-            detectedIssues.wrinkles +
-            detectedIssues.blackheads) / 4
-        )
-      );
+      const normalize = (val, max) => Math.min(25, (val / max) * 25);
+
+const overallScore = Math.round(
+  normalize(detectedIssues.acne, 20) +
+  normalize(detectedIssues.pigmentation, 40) +
+  normalize(detectedIssues.blackheads, 20) +
+  normalize(detectedIssues.wrinkles, 100)
+);
+
 
       /* -------- Save to DB -------- */
-      const saved = await SkinAnalysis.create({
-        user: req.user._id,
-        detectedIssues,
-        overallScore,
-        notes: data.recommendations,
-      });
+    const saved = await SkinAnalysis.create({
+  user: req.user.uid,
+  detectedIssues: {
+    acne: data.acne,
+    pigmentation: data.pigmentation,
+    wrinkles: data.wrinkles,
+    blackheads: data.blackheads,
+  },
+  overallScore,
+  notes: data.recommendations,
+});
+
 
       res.status(201).json({
         message: 'Analysis completed',
         analysis: saved,
       });
 
-      res
 
       
 
@@ -90,9 +96,9 @@ router.get(
   authMiddleware,
   async (req, res) => {
     try {
-      console.log('Fetching latest analysis for user:', req.user.username);
+      console.log('Fetching latest analysis for user:', req.user.name);
       const latest = await SkinAnalysis
-        .findOne({ user: req.user._id })
+        .findOne({ user: req.user.uid })
         .sort({ createdAt: -1 });
 
       if (!latest) {
@@ -106,5 +112,20 @@ router.get(
     }
   }
 );
+
+
+
+router.get('/history', authMiddleware, async (req, res) => {
+  try {
+    const analyses = await SkinAnalysis.find({ user: req.user._id })
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    res.json(analyses);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch history' });
+  }
+});
+
 
 module.exports = router;

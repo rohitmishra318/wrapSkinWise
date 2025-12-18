@@ -8,6 +8,7 @@ const analyzeRoutes = require('./routes/analyzeRoutes'); // <-- Import analyze r
 const Routine = require('./models/Routine');
 const SkinAnalysis = require('./models/SkinAnalysis');
 const blogRoutes = require('./routes/blogRoutes'); // <-- Import blog routes
+require('dotenv').config();
 
 
 const app = express();

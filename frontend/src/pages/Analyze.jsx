@@ -125,6 +125,7 @@ const res = await axios.post(endpoint, formData, {
 
 
       setResult(res.data);
+      console.log("here");
       console.log('Analysis result:', res.data);
       console.log(result);
       // Optionally navigate to a result page:
@@ -260,7 +261,7 @@ const res = await axios.post(endpoint, formData, {
           )}
 
           {/* show detector outputs (safe rendering if keys missing) */}
-          {result && result.analysis && (
+          {result?.analysis && (
   <div className="mt-6 bg-white dark:bg-gray-800 p-5 rounded shadow-sm">
     <h2 className="text-lg font-semibold mb-3">Analysis Results</h2>
 
@@ -268,28 +269,40 @@ const res = await axios.post(endpoint, formData, {
       <div className="p-3 border rounded">
         <div className="text-sm text-gray-600">Acne</div>
         <div className="font-medium">
-          {result.analysis.detectedIssues.acne}
+          {result.analysis.detectedIssues.acne.label}
+          <span className="text-xs text-gray-500 ml-2">
+            (Count: {result.analysis.detectedIssues.acne.count})
+          </span>
         </div>
       </div>
 
       <div className="p-3 border rounded">
         <div className="text-sm text-gray-600">Blackheads</div>
         <div className="font-medium">
-          {result.analysis.detectedIssues.blackheads}
+          {result.analysis.detectedIssues.blackheads.present ? "Present" : "None"}
+          <span className="text-xs text-gray-500 ml-2">
+            (Count: {result.analysis.detectedIssues.blackheads.count})
+          </span>
         </div>
       </div>
 
       <div className="p-3 border rounded">
         <div className="text-sm text-gray-600">Wrinkles</div>
         <div className="font-medium">
-          {result.analysis.detectedIssues.wrinkles}
+          {result.analysis.detectedIssues.wrinkles.label}
+          <span className="text-xs text-gray-500 ml-2">
+            (Edge Density: {result.analysis.detectedIssues.wrinkles.edge_density})
+          </span>
         </div>
       </div>
 
       <div className="p-3 border rounded">
         <div className="text-sm text-gray-600">Pigmentation</div>
         <div className="font-medium">
-          {result.analysis.detectedIssues.pigmentation}
+          {result.analysis.detectedIssues.pigmentation.label}
+          <span className="text-xs text-gray-500 ml-2">
+            (Count: {result.analysis.detectedIssues.pigmentation.count})
+          </span>
         </div>
       </div>
     </div>
@@ -302,6 +315,7 @@ const res = await axios.post(endpoint, formData, {
     </div>
   </div>
 )}
+
 
 
           {/* Optional recommendations */}

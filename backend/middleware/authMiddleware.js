@@ -1,40 +1,49 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const admin = require('../config/firebaseAdmin');
 
 /**
- * Auth Middleware
- * - Verifies JWT
- * - Attaches logged-in user to req.user
+ * Firebase Auth Middleware
+ * - Verifies Firebase ID Token
+ * - Attaches Firebase user to req.user
  */
 const authMiddleware = async (req, res, next) => {
   try {
-    // 1️⃣ Get token from header
+    // 1️⃣ Read Authorization header
     const authHeader = req.headers.authorization;
-    console.log('Auth Header:', authHeader);
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ message: 'Authorization token missing' });
     }
 
     const token = authHeader.split(' ')[1];
 
-    // 2️⃣ Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // 2️⃣ Verify Firebase token
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    console.log('Decoded Firebase token:', decodedToken);
+    /**
+     * decodedToken contains:
+     * {
+     *   uid,
+     *   email,
+     *   name,
+     *   picture,
+     *   auth_time,
+     *   exp,
+     *   ...
+     * }
+     */
 
-    // 3️⃣ Fetch user
-    const user = await User.findById(decoded.id).select('-password');
+    // 3️⃣ Attach user info to request
+    req.user = {
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      name: decodedToken.name || null,
+    };
 
-    if (!user) {
-      return res.status(401).json({ message: 'User no longer exists' });
-    }
-     console.log('Authenticated User:', user.username);
-    // 4️⃣ Attach user to request
-    req.user = user;
-
-    // 5️⃣ Continue
+    // 4️⃣ Continue
     next();
 
   } catch (error) {
-    console.error('Auth Middleware Error:', error.message);
+    console.error('Firebase Auth Error:', error.message);
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
 };

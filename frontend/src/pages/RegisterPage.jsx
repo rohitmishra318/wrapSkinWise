@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock } from 'lucide-react';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase';
+
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({ username: '', email: '', password: '' });
@@ -14,31 +17,45 @@ const RegisterPage = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setMessage('');
+  e.preventDefault();
+  setIsSubmitting(true);
+  setMessage('');
 
-    try {
-      const res = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+  try {
+    // 1️⃣ Create user in Firebase
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      formData.email,
+      formData.password
+    );
 
-      const data = await res.json();
+    const firebaseUser = userCredential.user;
 
-      if (res.ok) {
-        setMessage("Registration successful! Redirecting...");
-        setTimeout(() => navigate('/login'), 1800);
-      } else {
-        setMessage(data.message || 'Registration failed');
-      }
-    } catch {
-      setMessage('Network error. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    // 2️⃣ Get Firebase ID token
+    const token = await firebaseUser.getIdToken();
+
+    /* // 3️⃣ OPTIONAL: sync user with backend
+    await fetch('http://localhost:5000/api/auth/firebase-sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        username: formData.username
+      })
+    });*/
+
+    setMessage('Registration successful! Redirecting...');
+    setTimeout(() => navigate('/login'), 1500);
+
+  } catch (error) {
+    setMessage(error.message);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 to-white dark:from-gray-900 dark:to-gray-800 p-4">
