@@ -17,6 +17,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import ThemeToggle from './ThemeToggle';
 
+
 /**
  * Navbar — centered logo layout
  * - Equal left / center / right columns
@@ -93,6 +94,7 @@ const Navbar = () => {
                 <Link to="/blog" className="text-sm text-slate-700 dark:text-gray-200 hover:text-indigo-600">
                   Blog
                 </Link>
+                
                 <Link to="/about" className="text-sm text-slate-700 dark:text-gray-200 hover:text-indigo-600">
                   About
                 </Link>
@@ -120,7 +122,7 @@ const Navbar = () => {
                   <Menu as="div" className="relative">
                     <Menu.Button className="inline-flex items-center gap-2 rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-2 text-sm">
                       <User size={16} />
-                      <span className="hidden sm:inline">{user.name || 'You'}</span>
+                      <span className="hidden sm:inline">{user.email || 'You'}</span>
                       <ChevronDown size={14} />
                     </Menu.Button>
 

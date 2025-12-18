@@ -28,15 +28,9 @@ export const AuthProvider = ({ children }) => {
 
         // Store token only (backend needs this)
         localStorage.setItem('token', token);
-
+        console.log('Firebase user logged in:', firebaseUser);
         // Minimal user object for UI
-        setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          name:
-            firebaseUser.displayName ||
-            firebaseUser.email?.split('@')[0],
-        });
+        setUser(firebaseUser);
       } else {
         localStorage.removeItem('token');
         setUser(null);

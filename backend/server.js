@@ -8,6 +8,7 @@ const analyzeRoutes = require('./routes/analyzeRoutes'); // <-- Import analyze r
 const Routine = require('./models/Routine');
 const SkinAnalysis = require('./models/SkinAnalysis');
 const blogRoutes = require('./routes/blogRoutes'); // <-- Import blog routes
+const adminAnalyticsRoutes = require('./routes/adminAnalyticsRoutes'); // <-- Import admin analytics routes
 require('dotenv').config();
 
 
@@ -40,6 +41,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', userRoutes); // <-- Use the user routes
 app.use('/api/analyze', analyzeRoutes); // <-- Use analyze routes
 app.use('/api/blogs', blogRoutes); // <-- Use blog routes
+app.use('/api/admin/analytics', adminAnalyticsRoutes); // <-- Use admin analytics routes
 
 
 // Helper to create a consistent, private room name

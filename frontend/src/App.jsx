@@ -22,6 +22,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import BlogPage from './pages/BlogPage.jsx';
 import AdvicePage from './pages/AdvicePage.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
+import AdminRoute from './components/AdminRoute.jsx';
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -78,6 +79,12 @@ function App() {
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/advice" element={<AdvicePage />} />
                 <Route path="/consultation" element={<ConsultationPage />} />
+                 
+                <Route path="/admin" element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                     }/>
 
                 {/* --- Protected Routes --- */}
                 <Route element={<ProtectedRoute />}>
