@@ -16,11 +16,27 @@ options = vision.FaceLandmarkerOptions(
 face_landmarker = vision.FaceLandmarker.create_from_options(options)
 
 
-LEFT_EYE = list(range(33, 133))
-RIGHT_EYE = list(range(362, 463))
-LIPS = list(range(61, 88))
-LEFT_EYEBROW = list(range(70, 107))
-RIGHT_EYEBROW = list(range(336, 377))
+LEFT_EYE = [
+    33, 7, 163, 144, 145, 153, 154, 155,
+    133, 173, 157, 158, 159, 160, 161, 246
+]
+
+RIGHT_EYE = [
+    362, 382, 381, 380, 374, 373, 390, 249,
+    263, 466, 388, 387, 386, 385, 384, 398
+]
+
+LIPS = [
+    61, 146, 91, 181, 84, 17, 314, 405,
+    321, 375, 291, 308, 324, 318, 402,
+    317, 14, 87, 178, 88, 95
+]
+
+LEFT_EYEBROW = [70, 63, 105, 66, 107, 55, 65, 52]
+RIGHT_EYEBROW = [336, 296, 334, 293, 300, 285, 295, 282]
+
+
+
 
 
 def get_face_bbox(landmarks, w, h, margin=20):
@@ -50,6 +66,29 @@ def create_skin_mask_from_landmarks(landmarks, h, w):
 
 
 cap = cv2.VideoCapture(0)
+
+
+def draw_ignored_regions(face_bgr, landmarks, w, h):
+    overlay = face_bgr.copy()
+
+    def draw_region(indices, color):
+        pts = [(int(landmarks[i].x * w), int(landmarks[i].y * h)) for i in indices]
+        cv2.fillPoly(overlay, [np.array(pts, np.int32)], color)
+
+    # Eyes → Blue
+    draw_region(LEFT_EYE, (255, 0, 0))
+    draw_region(RIGHT_EYE, (255, 0, 0))
+
+    # Lips → Red
+    draw_region(LIPS, (0, 0, 255))
+
+    # Eyebrows → Purple
+    draw_region(LEFT_EYEBROW, (255, 0, 255))
+    draw_region(RIGHT_EYEBROW, (255, 0, 255))
+
+    # Blend overlay with original
+    cv2.addWeighted(overlay, 0.45, face_bgr, 0.55, 0, face_bgr)
+
 
 while True:
     ret, frame = cap.read()
@@ -83,6 +122,8 @@ while True:
     mask = create_skin_mask_from_landmarks(
     landmarks, face_h, face_w
       )
+    
+    draw_ignored_regions(face_bgr, landmarks, face_w, face_h)
 
 
     # ========== ACNE ==========
