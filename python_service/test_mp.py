@@ -35,8 +35,37 @@ LIPS = [
 LEFT_EYEBROW = [70, 63, 105, 66, 107, 55, 65, 52]
 RIGHT_EYEBROW = [336, 296, 334, 293, 300, 285, 295, 282]
 
+FACE_OUTLINE = [
+    10, 338, 297, 332, 284, 251, 389, 356, 454,
+    323, 361, 288, 397, 365, 379, 378, 400, 377,
+    152, 148, 176, 149, 150, 136, 172, 58, 132,
+    93, 234, 127, 162, 21, 54, 103, 67, 109
+]
 
 
+def create_face_outline_mask(face_landmarks, h, w):
+    pts = [face_landmarks[i] for i in FACE_OUTLINE]
+    pts = order_points_clockwise(pts)
+
+    mask = np.zeros((h, w), dtype=np.uint8)
+    cv2.fillPoly(mask, [np.array(pts, np.int32)], 255)
+    return mask
+
+
+def order_points_clockwise(points):
+    pts = np.array(points)
+    center = pts.mean(axis=0)
+    angles = np.arctan2(pts[:,1] - center[1], pts[:,0] - center[0])
+    return pts[np.argsort(angles)]
+
+
+def landmarks_to_face_space(landmarks, x1, y1, w, h):
+    face_landmarks = []
+    for lm in landmarks:
+        px = int(lm.x * w) - x1
+        py = int(lm.y * h) - y1
+        face_landmarks.append((px, py))
+    return face_landmarks
 
 
 def get_face_bbox(landmarks, w, h, margin=20):
@@ -51,43 +80,48 @@ def get_face_bbox(landmarks, w, h, margin=20):
     return x_min, y_min, x_max, y_max
 
 
-def create_skin_mask_from_landmarks(landmarks, h, w):
+def create_skin_mask_from_landmarks(face_landmarks, h, w):
     mask = np.ones((h, w), dtype=np.uint8) * 255
+    ignore = np.zeros((h, w), dtype=np.uint8)
 
     def remove(indices):
-        pts = [(int(landmarks[i].x * w), int(landmarks[i].y * h)) for i in indices]
-        cv2.fillPoly(mask, [np.array(pts, np.int32)], 0)
+        pts = [face_landmarks[i] for i in indices]
+        pts = order_points_clockwise(pts)
+        cv2.fillPoly(ignore, [np.array(pts, np.int32)], 255)
 
     for region in [LEFT_EYE, RIGHT_EYE, LIPS, LEFT_EYEBROW, RIGHT_EYEBROW]:
         remove(region)
 
+    # buffer zone
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
+    ignore = cv2.dilate(ignore, kernel, iterations=1)
+
+    mask[ignore > 0] = 0
     return mask
 
 
 
-cap = cv2.VideoCapture(0)
+
+IMAGE_PATH = "input.jpg"      # input image
+OUTPUT_PATH = "output.jpg"    # annotated result
 
 
-def draw_ignored_regions(face_bgr, landmarks, w, h):
+
+def draw_ignored_regions(face_bgr, face_landmarks, w, h):
     overlay = face_bgr.copy()
 
     def draw_region(indices, color):
-        pts = [(int(landmarks[i].x * w), int(landmarks[i].y * h)) for i in indices]
+        pts = [face_landmarks[i] for i in indices]
+        pts = order_points_clockwise(pts)
         cv2.fillPoly(overlay, [np.array(pts, np.int32)], color)
 
-    # Eyes → Blue
-    draw_region(LEFT_EYE, (255, 0, 0))
-    draw_region(RIGHT_EYE, (255, 0, 0))
-
-    # Lips → Red
-    draw_region(LIPS, (0, 0, 255))
-
-    # Eyebrows → Purple
-    draw_region(LEFT_EYEBROW, (255, 0, 255))
-    draw_region(RIGHT_EYEBROW, (255, 0, 255))
-
-    # Blend overlay with original
+    draw_region(LEFT_EYE, (0, 255, 0))
+    draw_region(RIGHT_EYE, (0, 255, 0))
+    draw_region(LIPS, (0, 255, 0))
+    draw_region(LEFT_EYEBROW, (0, 255, 0))
+    draw_region(RIGHT_EYEBROW, (0, 255, 0))
     cv2.addWeighted(overlay, 0.45, face_bgr, 0.55, 0, face_bgr)
+
 
 
 while True:
@@ -106,12 +140,15 @@ while True:
         if cv2.waitKey(1) & 0xFF == 27:
             break
         continue
-
+    
     h, w, _ = frame.shape
-    landmarks = result.face_landmarks[0]
+    full_landmarks = result.face_landmarks[0]
 
     # ---- FACE BOUNDING BOX ----
-    x1, y1, x2, y2 = get_face_bbox(landmarks, w, h)
+    x1, y1, x2, y2 = get_face_bbox(full_landmarks, w, h)
+
+    # convert landmarks to face-local coordinates (relative to bbox)
+    face_landmarks = landmarks_to_face_space(full_landmarks, x1, y1, w, h)
     face_rgb = rgb[y1:y2, x1:x2]
     face_bgr = frame[y1:y2, x1:x2]
     gray = cv2.cvtColor(face_rgb, cv2.COLOR_RGB2GRAY)
@@ -119,11 +156,9 @@ while True:
 
     # ---- SKIN MASK ON FACE ONLY ----
     face_h, face_w, _ = face_rgb.shape
-    mask = create_skin_mask_from_landmarks(
-    landmarks, face_h, face_w
-      )
-    
-    draw_ignored_regions(face_bgr, landmarks, face_w, face_h)
+    mask = create_skin_mask_from_landmarks(face_landmarks, face_h, face_w)
+    draw_ignored_regions(face_bgr, face_landmarks, face_w, face_h)
+
 
 
     # ========== ACNE ==========
@@ -147,14 +182,14 @@ while True:
     
 
     # ========== BLACKHEADS ==========
-        blur = cv2.GaussianBlur(gray, (7, 7), 0)
-        _, thresh = cv2.threshold(blur, 55, 255, cv2.THRESH_BINARY_INV)
-        thresh = cv2.bitwise_and(thresh, thresh, mask=mask)
+    blur = cv2.GaussianBlur(gray, (7, 7), 0)
+    _, thresh = cv2.threshold(blur, 55, 255, cv2.THRESH_BINARY_INV)
+    thresh = cv2.bitwise_and(thresh, thresh, mask=mask)
 
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        blackhead_count = 0
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    blackhead_count = 0
 
-        for c in contours:
+    for c in contours:
                area = cv2.contourArea(c)
                if 5 < area < 40:
                 blackhead_count += 1
@@ -177,7 +212,12 @@ while True:
     l, _, _ = cv2.split(lab)
     mean, std = np.mean(l[mask > 0]), np.std(l[mask > 0])
 
-    dark = (l < (mean - 1.0 * std)) & (mask > 0)
+    face_outline_mask = create_face_outline_mask(face_landmarks, face_h, face_w)
+
+    final_skin_mask = cv2.bitwise_and(mask, face_outline_mask)
+
+    dark = (l < (mean - 1.0 * std)) & (final_skin_mask > 0)
+
 
     pig_overlay = face_bgr.copy()
     pig_overlay[dark] = [0, 255, 255]
