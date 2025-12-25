@@ -34,7 +34,7 @@ router.post(
         form,
         {
           headers: form.getHeaders(),
-          timeout: 60000,
+          timeout: 100000,
         }
       );
 
@@ -85,6 +85,7 @@ const overallScore = Math.round(
 
     } catch (err) {
       console.error('Analyze error:', err.message);
+      console.log("here");
       res.status(500).json({ message: 'Skin analysis failed' });
     }
   }
