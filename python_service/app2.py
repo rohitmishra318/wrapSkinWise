@@ -21,6 +21,31 @@ base_options = python.BaseOptions(model_asset_path=MODEL_PATH)
 options = vision.FaceLandmarkerOptions(base_options=base_options, num_faces=1)
 face_landmarker = vision.FaceLandmarker.create_from_options(options)
 
+
+# ---------------- Normalization Config ----------------
+MAX_COUNTS = {
+    "acne": 80,
+    "blackheads": 50,
+    "pigmentation": 4000,
+}
+
+def normalize_score(value, max_value):
+    if value <= 0:
+        return 0
+    return min(100, int((value / max_value) * 100))
+
+def wrinkles_to_score(edge_density):
+    if edge_density <= 0.01:
+        return 10
+    elif edge_density <= 0.03:
+        return 30
+    elif edge_density <= 0.05:
+        return 60
+    else:
+        return 85
+
+
+
 # landmarks used for masks
 LEFT_EYE = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246]
 RIGHT_EYE = [362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398]
@@ -356,11 +381,29 @@ def analyze_image():
     wrinkles = detect_wrinkles(face_rgb, mask)
     pigmentation = detect_pigmentation(face_rgb, final_skin_mask)
 
+
+    acne_score = normalize_score(acne.get("count", 0), MAX_COUNTS["acne"])
+    blackhead_score = normalize_score(blackheads.get("count", 0), MAX_COUNTS["blackheads"])
+    pigmentation_score = normalize_score(pigmentation.get("count", 0), MAX_COUNTS["pigmentation"])
+    wrinkle_score = wrinkles_to_score(wrinkles.get("edge_density", 0))
+    
+
+
+    severity = {
+    "acne": acne_score,
+    "blackheads": blackhead_score,
+    "wrinkles": wrinkle_score,
+    "pigmentation": pigmentation_score,
+    }
+
     analysis = {
-        'acne': acne,
-        'blackheads': blackheads,
-        'wrinkles': wrinkles,
-        'pigmentation': pigmentation,
+        "raw": {
+        "acne": acne,
+        "blackheads": blackheads,
+        "wrinkles": wrinkles,
+        "pigmentation": pigmentation,
+    },
+        'severity': severity,
         'recommendations': generate_recommendations({
             'acne': acne,
             'blackheads': blackheads,

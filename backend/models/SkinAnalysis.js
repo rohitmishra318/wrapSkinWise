@@ -1,38 +1,31 @@
 const mongoose = require('mongoose');
 
-const skinAnalysisSchema = new mongoose.Schema(
-  {
-    user: {
-  type: String, // Firebase UID
-  required: true,
-  index: true,
-}
-,
-
-    imageUrl: {
-      type: String
-    },
-     
-     modelVersion: {
-      type: String,
-      default: 'mediapipe_face_mesh'
-    },
-
-    detectedIssues: {
-  acne: { count: Number, label: String },
-  pigmentation: { count: Number, label: String },
-  wrinkles: { density: Number, label: String },
-  blackheads: { count: Number },
-},
-
-    overallScore: {
-      type: Number, // 0–100
-    },
-    
-    
-    notes: String,
+const skinAnalysisSchema = new mongoose.Schema({
+  user: {
+    type: String, // Firebase UID
+    required: true,
+    index: true,
   },
-  { timestamps: true }
-);
+
+  raw: {
+    type: Object,
+    required: true,
+  },
+
+  severity: {
+    acne: Number,
+    blackheads: Number,
+    wrinkles: Number,
+    pigmentation: Number,
+  },
+
+  overallScore: Number,
+
+  notes: String,
+
+  modelVersion: String,
+
+}, { timestamps: true });
+
 
 module.exports = mongoose.model('SkinAnalysis', skinAnalysisSchema);

@@ -114,7 +114,7 @@ export default function Analyze() {
       const endpoint = `${base}/api/analyze`;
 
       const token = localStorage.getItem('token');
-
+      console
 const res = await axios.post(endpoint, formData, {
   headers: {
     'Content-Type': 'multipart/form-data',
@@ -266,47 +266,64 @@ const res = await axios.post(endpoint, formData, {
     <h2 className="text-lg font-semibold mb-3">Analysis Results</h2>
 
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Acne */}
       <div className="p-3 border rounded">
         <div className="text-sm text-gray-600">Acne</div>
         <div className="font-medium">
-          {result.analysis.detectedIssues.acne.label}
+          {result.analysis.raw.acne.label}
           <span className="text-xs text-gray-500 ml-2">
-            (Count: {result.analysis.detectedIssues.acne.count})
+            (Count: {result.analysis.raw.acne.count})
           </span>
+        </div>
+        <div className="text-xs text-indigo-600 mt-1">
+          Severity: {result.analysis.severity.acne}/100
         </div>
       </div>
 
+      {/* Blackheads */}
       <div className="p-3 border rounded">
         <div className="text-sm text-gray-600">Blackheads</div>
         <div className="font-medium">
-          {result.analysis.detectedIssues.blackheads.present ? "Present" : "None"}
+          {result.analysis.raw.blackheads.present ? "Present" : "None"}
           <span className="text-xs text-gray-500 ml-2">
-            (Count: {result.analysis.detectedIssues.blackheads.count})
+            (Count: {result.analysis.raw.blackheads.count})
           </span>
+        </div>
+        <div className="text-xs text-indigo-600 mt-1">
+          Severity: {result.analysis.severity.blackheads}/100
         </div>
       </div>
 
+      {/* Wrinkles */}
       <div className="p-3 border rounded">
         <div className="text-sm text-gray-600">Wrinkles</div>
         <div className="font-medium">
-          {result.analysis.detectedIssues.wrinkles.label}
+          {result.analysis.raw.wrinkles.label}
           <span className="text-xs text-gray-500 ml-2">
-            (Edge Density: {result.analysis.detectedIssues.wrinkles.edge_density})
+            (Edge Density: {result.analysis.raw.wrinkles.edge_density})
           </span>
+        </div>
+        <div className="text-xs text-indigo-600 mt-1">
+          Severity: {result.analysis.severity.wrinkles}/100
         </div>
       </div>
 
+      {/* Pigmentation */}
       <div className="p-3 border rounded">
         <div className="text-sm text-gray-600">Pigmentation</div>
         <div className="font-medium">
-          {result.analysis.detectedIssues.pigmentation.label}
+          {result.analysis.raw.pigmentation.label}
           <span className="text-xs text-gray-500 ml-2">
-            (Count: {result.analysis.detectedIssues.pigmentation.count})
+            (Score: {result.analysis.raw.pigmentation.score})
           </span>
+        </div>
+        <div className="text-xs text-indigo-600 mt-1">
+          Severity: {result.analysis.severity.pigmentation}/100
         </div>
       </div>
     </div>
 
+    {/* Recommendations */}
     <div className="mt-4 p-3 bg-rose-50 rounded">
       <h3 className="font-medium">Recommendations</h3>
       <p className="text-sm whitespace-pre-wrap">
@@ -315,6 +332,7 @@ const res = await axios.post(endpoint, formData, {
     </div>
   </div>
 )}
+
 
 
 
