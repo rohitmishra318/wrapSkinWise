@@ -90,7 +90,7 @@ router.get(
   }
 );
 
-
+                                   
 router.get('/latest-with-delta', authMiddleware, async (req, res) => {
   try {
     const analyses = await SkinAnalysis
