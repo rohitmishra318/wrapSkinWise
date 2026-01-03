@@ -91,6 +91,58 @@ router.get(
 );
 
 
+router.get('/latest-with-delta', authMiddleware, async (req, res) => {
+  try {
+    const analyses = await SkinAnalysis
+      .find({ user: req.user.uid })
+      .sort({ createdAt: -1 })
+      .limit(2);
+
+    if (analyses.length === 0) {
+      return res.status(404).json({ message: 'No analysis found' });
+    }
+
+    console.log("Analyses:", analyses);
+    console.log("wrinkles",analyses[0].raw.wrinkles);
+
+    const latest = analyses[0];
+    const previous = analyses[1] || null;
+
+    let delta = null;
+    console.log("here",previous);
+
+    if (previous) {
+      delta = {
+        acne:
+          latest.overallScore - previous.overallScore,
+
+        wrinkles:
+          (latest.raw.wrinkles?.edge_density ?? 0) -
+          (previous.raw.wrinkles?.edge_density ?? 0),
+
+        pigmentation:
+          (latest.raw.pigmentation?.count ?? 0) -
+          (previous.raw.pigmentation?.count ?? 0),
+
+        blackheads:
+          (latest.raw.blackheads?.count ?? 0) -
+          (previous.raw.blackheads?.count ?? 0),
+      };
+    }
+
+    res.json({
+      analysis: latest,
+      previousAnalysis: previous,
+      delta,
+      hasPrevious:true,
+    });
+  } catch (err) {
+    console.log("Error computing delta", err);
+    res.status(500).json({ message: 'Failed to compute delta' });
+  }
+});
+
+
 
 
 router.get('/history', authMiddleware, async (req, res) => {

@@ -22,7 +22,6 @@ const RoutineItem = ({ step, note }) => (
 /* ---------------- MAIN PROFILE PAGE ---------------- */
 
 export default function Profile() {
-  const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // TEMP user info (replace with AuthContext later)
@@ -32,27 +31,46 @@ export default function Profile() {
     joined: 'March 2024',
   };
 
-  useEffect(() => {
-    async function fetchAnalysis() {
-      try {
-        const base = import.meta.env.VITE_API_BASE_URL || '';
-        const endpoint = `${base}/api/analyze/latest`;
-        const token = localStorage.getItem('token');
+ const [analysis, setAnalysis] = useState(null);
+ const [delta, setDelta] = useState(null);
+ const [hasPrevious, setHasPrevious] = useState(false);
+  
+ const trend = (value) => {
+  if (value == null) return null;
+  if (value < 0) return { text: 'Improved', color: 'text-green-600', icon: '▲' };
+  if (value > 0) return { text: 'Worsened', color: 'text-red-600', icon: '▼' };
+  return { text: 'Stable', color: 'text-gray-500', icon: '●' };
+};
 
-        const res = await axios.get(endpoint, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
 
-        setAnalysis(res.data);
-      } catch (err) {
-        console.error('No analysis found');
-      } finally {
-        setLoading(false);
-      }
+
+useEffect(() => {
+  async function fetchProfile() {
+    try {
+      const base = import.meta.env.VITE_API_BASE_URL || '';
+      const endpoint = `${base}/api/analyze/latest-with-delta`;
+      const token = localStorage.getItem('token');
+
+      const res = await axios.get(endpoint, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setAnalysis(res.data.analysis);
+      setDelta(res.data.delta);
+      setHasPrevious(Boolean(res.data.previousAnalysis)); // ✅ correct
+
+      console.log(hasPrevious);
+    } catch (err) {
+      console.log("Error fetching profile");
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    fetchAnalysis();
-  }, []);
+  fetchProfile();
+}, []);
+
 
   if (loading) {
     return <div className="p-10 text-center">Loading profile...</div>;
@@ -115,36 +133,67 @@ export default function Profile() {
 
         {/* ---------------- SKIN SUMMARY ---------------- */}
         <section>
-          <h2 className="text-xl font-semibold mb-4">
-            Current Skin Summary
-          </h2>
+  <h2 className="text-xl font-semibold mb-4">
+    Current Skin Summary
+  </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard
-              title="Acne"
-              value={raw.acne.label}
-              sub={`Count: ${raw.acne.count} • Severity: ${severity.acne}/100`}
-            />
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
 
-            <StatCard
-              title="Blackheads"
-              value={raw.blackheads.present ? 'Present' : 'None'}
-              sub={`Count: ${raw.blackheads.count} • Severity: ${severity.blackheads}/100`}
-            />
+    {/* Acne */}
+    <StatCard
+      title="Acne"
+      value={raw.acne.label}
+      sub={`Count: ${raw.acne.count} • Severity: ${severity.acne}/100`}
+    >
+      {hasPrevious && (
+        <div className={`text-xs mt-1 ${trend(delta.acne)?.color}`}>
+          {trend(delta.acne)?.icon} {trend(delta.acne)?.text} since last analysis
+        </div>
+      )}
+    </StatCard>
 
-            <StatCard
-              title="Pigmentation"
-              value={raw.pigmentation.label}
-              sub={`Severity: ${severity.pigmentation}/100`}
-            />
+    {/* Blackheads */}
+    <StatCard
+      title="Blackheads"
+      value={raw.blackheads.present ? 'Present' : 'None'}
+      sub={`Count: ${raw.blackheads.count} • Severity: ${severity.blackheads}/100`}
+    >
+      {hasPrevious && (
+        <div className={`text-xs mt-1 ${trend(delta.blackheads)?.color}`}>
+          {trend(delta.blackheads)?.text}
+        </div>
+      )}
+    </StatCard>
 
-            <StatCard
-              title="Wrinkles"
-              value={raw.wrinkles.label}
-              sub={`Severity: ${severity.wrinkles}/100`}
-            />
-          </div>
-        </section>
+    {/* Pigmentation */}
+    <StatCard
+      title="Pigmentation"
+      value={raw.pigmentation.label}
+      sub={`Severity: ${severity.pigmentation}/100`}
+    >
+      {hasPrevious && (
+        <div className={`text-xs mt-1 ${trend(delta.pigmentation)?.color}`}>
+          {trend(delta.pigmentation)?.text}
+        </div>
+      )}
+    </StatCard>
+
+    {/* Wrinkles */}
+    <StatCard
+      title="Wrinkles"
+      value={raw.wrinkles.label}
+      sub={`Severity: ${severity.wrinkles}/100`}
+    >
+      {hasPrevious && (
+        <div className={`text-xs mt-1 ${trend(delta.wrinkles)?.color}`}>
+          {trend(delta.wrinkles)?.text}
+        </div>
+      )}
+    </StatCard>
+
+  </div>
+</section>
+
 
         {/* ---------------- ANALYSIS SUMMARY ---------------- */}
         <section className="bg-white dark:bg-gray-800 p-6 rounded-xl border">

@@ -23,6 +23,20 @@ const initialConcerns = {
   sensitivity: false,
 };
 
+function getImprovementBadge(delta) {
+  if (delta == null) return null;
+
+  if (delta > 5) {
+    return { text: "Improved", color: "text-green-600" };
+  }
+  if (delta < -5) {
+    return { text: "Worsened", color: "text-red-600" };
+  }
+  return { text: "Stable", color: "text-gray-500" };
+}
+
+
+
 export default function Analyze() {
   const navigate = useNavigate();
   const [fullName, setFullName] = useState('');

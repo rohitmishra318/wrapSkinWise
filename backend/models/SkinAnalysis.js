@@ -21,6 +21,15 @@ const skinAnalysisSchema = new mongoose.Schema({
 
   overallScore: Number,
 
+  delta: {
+  acne: Number,
+  blackheads: Number,
+  wrinkles: Number,
+  pigmentation: Number,
+  overall: Number
+},
+
+
   notes: String,
 
   modelVersion: String,
