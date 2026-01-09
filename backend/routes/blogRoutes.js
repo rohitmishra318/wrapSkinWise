@@ -30,6 +30,8 @@ router.get('/', async (req, res) => {
       response.data?.documents ||
       [];
 
+    console.log("Blog posts fetched:", posts);
+
     const blogs = posts.slice(0, 10).map((post, index) => ({
       id: post.id || index,
       title: post.title || 'Untitled',

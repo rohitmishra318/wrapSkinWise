@@ -159,6 +159,13 @@ const Navbar = () => {
                             </button>
                           )}
                         </Menu.Item>
+                        <Menu.Item>
+                          {({ active }) => (
+                            <Link to="/routine" className={`block px-4 py-2 text-sm ${active && 'bg-gray-100 dark:bg-gray-700'}`}>
+                              My Routine
+                            </Link>
+                          )}
+                        </Menu.Item>
                       </Menu.Items>
                     </Transition>
                   </Menu>

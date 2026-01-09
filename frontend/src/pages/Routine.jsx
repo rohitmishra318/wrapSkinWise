@@ -170,6 +170,9 @@ export default function RoutinePage() {
   const [savedMsg, setSavedMsg] = useState(null);
   const [shareText, setShareText] = useState('');
   const payload = location.state || getSavedQuiz();
+  const [streak, setStreak] = useState(null);
+  const [marking, setMarking] = useState(false);
+
 
   // compute type and routine
   const type = useMemo(() => {
@@ -207,6 +210,26 @@ export default function RoutinePage() {
       localStorage.setItem(keyPrefix, JSON.stringify(checked));
     } catch {}
   }, [checked, keyPrefix]);
+
+  useEffect(() => {
+  async function fetchStreak() {
+    try {
+      const base = import.meta.env.VITE_API_BASE_URL || '';
+      const token = localStorage.getItem('token');
+
+      const res = await axios.get(`${base}/api/routine/streak`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setStreak(res.data);
+    } catch (err) {
+      console.error('Failed to fetch streak');
+    }
+  }
+
+  fetchStreak();
+}, []);
+
 
   useEffect(() => {
     // if no payload, send back to quiz after short delay
@@ -331,32 +354,84 @@ export default function RoutinePage() {
 
         {/* Progress Card */}
         <div className="w-full md:w-72 bg-slate-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-sm font-medium">Daily completion</div>
-            <div className="text-xs text-slate-500">{checkedCount}/{totalItems}</div>
+
+  {/* DAILY COMPLETION */}
+  <div className="flex items-center justify-between mb-3">
+    <div className="text-sm font-medium">Daily completion</div>
+    <div className="text-xs text-slate-500">{checkedCount}/{totalItems}</div>
+  </div>
+
+  <div className="w-full bg-gray-200 h-3 rounded-full overflow-hidden">
+    <div
+      className="h-3 bg-indigo-600 rounded-full transition-all"
+      style={{ width: `${completion}%` }}
+    />
+  </div>
+
+  <div className="mt-2 text-xs text-slate-600">
+    Complete all steps to maintain your streak.
+  </div>
+
+  {/* ACTION BUTTONS */}
+  <div className="mt-4 flex gap-2 flex-wrap">
+    <button
+      onClick={() => {
+        const updates = {};
+        routine.morning.forEach((_, i) => updates[`morning_${i}`] = true);
+        setChecked(prev => ({ ...prev, ...updates }));
+      }}
+      className="text-xs px-2 py-1 border rounded bg-white dark:bg-gray-700"
+    >
+      Mark Morning
+    </button>
+
+    <button
+      onClick={() => {
+        const updates = {};
+        routine.night.forEach((_, i) => updates[`night_${i}`] = true);
+        setChecked(prev => ({ ...prev, ...updates }));
+      }}
+      className="text-xs px-2 py-1 border rounded bg-white dark:bg-gray-700"
+    >
+      Mark Night
+    </button>
+
+    <button
+      onClick={() => setChecked({})}
+      className="text-xs px-2 py-1 border rounded bg-white dark:bg-gray-700"
+    >
+      Reset
+    </button>
+  </div>
+
+  {/* 🔥 STREAK SECTION */}
+  {streak && (
+    <div className="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-medium">Routine Streak</div>
+        <span className="text-xs text-slate-500">
+          Best: {streak.longestStreak} days
+        </span>
+      </div>
+
+      <div className="mt-2 flex items-center gap-2">
+        <span className="text-2xl">
+          {streak.currentStreak >= 7 ? '🔥' : '✅'}
+        </span>
+        <div>
+          <div className="text-lg font-semibold">
+            {streak.currentStreak} day streak
           </div>
-          <div className="w-full bg-gray-200 h-3 rounded-full overflow-hidden">
-            <div className="h-3 bg-indigo-600 rounded-full transition-all" style={{ width: `${completion}%` }} />
-          </div>
-          <div className="mt-3 text-xs text-slate-600">Track daily routine completion — checked items save locally.</div>
-
-          <div className="mt-4 flex gap-2">
-            <button onClick={() => {
-              // check all morning items
-              const updates = {};
-              routine.morning.forEach((_, i) => updates[`morning_${i}`] = true);
-              setChecked(prev => ({ ...prev, ...updates }));
-            }} className="text-xs px-2 py-1 border rounded bg-white dark:bg-gray-700">Mark Morning</button>
-
-            <button onClick={() => {
-              const updates = {};
-              routine.night.forEach((_, i) => updates[`night_${i}`] = true);
-              setChecked(prev => ({ ...prev, ...updates }));
-            }} className="text-xs px-2 py-1 border rounded bg-white dark:bg-gray-700">Mark Night</button>
-
-            <button onClick={() => setChecked({})} className="text-xs px-2 py-1 border rounded bg-white dark:bg-gray-700">Reset</button>
+          <div className="text-xs text-slate-500">
+            Keep your routine consistent
           </div>
         </div>
+      </div>
+    </div>
+  )}
+
+</div>
+
       </div>
 
       {/* Routine Cards (timeline-like) */}
