@@ -1,6 +1,8 @@
 // frontend/src/pages/Routine.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
 import {
   CheckCircle,
   Sun,
@@ -190,6 +192,30 @@ export default function RoutinePage() {
     return DEFAULT_ROUTINES[type] || DEFAULT_ROUTINES.normal;
   }, [type]);
 
+  async function markDayCompleted() {
+  if (marking) return; // prevent double calls
+
+  try {
+    setMarking(true);
+
+    const base = import.meta.env.VITE_API_BASE_URL || '';
+    const token = localStorage.getItem('token');
+
+    const res = await axios.post(
+      `${base}/api/routine/complete`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    setStreak(res.data); // update UI instantly
+  } catch (err) {
+    console.error('Failed to mark routine completion');
+  } finally {
+    setMarking(false);
+  }
+}
+
+
   // checklist state stored in localStorage keyed by quiz timestamp & type (so users can have multiple)
   const keyPrefix = useMemo(() => {
     const stamp = payload?.createdAt ? payload.createdAt : 'session';
@@ -220,9 +246,10 @@ export default function RoutinePage() {
       const res = await axios.get(`${base}/api/routine/streak`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
+      console.log('Fetched streak:', res.data);
       setStreak(res.data);
     } catch (err) {
+      console.log(err);
       console.error('Failed to fetch streak');
     }
   }
@@ -311,6 +338,13 @@ export default function RoutinePage() {
   const totalItems = routine.morning.length + routine.night.length + routine.weekly.length;
   const checkedCount = Object.keys(checked).filter(k => checked[k]).length;
   const completion = totalItems === 0 ? 0 : Math.round((checkedCount / totalItems) * 100);
+
+  useEffect(() => {
+  if (completion === 100 && streak?.lastCompleted !== new Date().toDateString()) {
+    markDayCompleted();
+  }
+}, [completion]);
+
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -541,14 +575,27 @@ export default function RoutinePage() {
           <div className="space-y-3">
             {routine.products.map((p, i) => (
               <div key={i} className="flex items-center gap-3">
-                <div className="w-14 h-14 bg-gray-100 dark:bg-gray-900 rounded-md flex items-center justify-center text-sm text-slate-500">
-                  IMG
-                </div>
-                <div>
-                  <div className="font-medium text-sm"><a className="hover:underline text-indigo-600" href={p.link}>{p.title}</a></div>
-                  <div className="text-xs text-slate-600">Check reviews & patch-test first.</div>
-                </div>
-              </div>
+  {/* Image Container */}
+  <div className="w-14 h-14 bg-gray-100 dark:bg-gray-900 rounded-md flex-shrink-0 overflow-hidden border border-gray-200 dark:border-gray-800">
+    <img 
+      src="/icon.webp"
+      alt={p.title} 
+      className="w-full h-full object-cover" 
+    />
+  </div>
+
+  {/* Text Content */}
+  <div>
+    <div className="font-medium text-sm">
+      <a className="hover:underline text-indigo-600" href={p.link}>
+        {p.title}
+      </a>
+    </div>
+    <div className="text-xs text-slate-600">
+      Check reviews & patch-test first.
+    </div>
+  </div>
+</div>
             ))}
           </div>
         </aside>

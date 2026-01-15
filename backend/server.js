@@ -42,6 +42,8 @@ app.use('/api/users', userRoutes); // <-- Use the user routes
 app.use('/api/analyze', analyzeRoutes); // <-- Use analyze routes
 app.use('/api/blogs', blogRoutes); // <-- Use blog routes
 app.use('/api/admin/analytics', adminAnalyticsRoutes); // <-- Use admin analytics routes
+app.use('/api/routine', require('./routes/routine'));
+
 
 
 // Helper to create a consistent, private room name

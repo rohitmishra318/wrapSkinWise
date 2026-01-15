@@ -1,4 +1,8 @@
 // frontend/src/pages/Profile.jsx
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer
+} from 'recharts';
+
 import React, { useEffect, useState } from 'react';
 import StatCard from '../components/Statcard';
 import axios from 'axios';
@@ -31,45 +35,53 @@ export default function Profile() {
     joined: 'March 2024',
   };
 
- const [analysis, setAnalysis] = useState(null);
- const [delta, setDelta] = useState(null);
- const [hasPrevious, setHasPrevious] = useState(false);
-  
- const trend = (value) => {
-  if (value == null) return null;
-  if (value < 0) return { text: 'Improved', color: 'text-green-600', icon: '▲' };
-  if (value > 0) return { text: 'Worsened', color: 'text-red-600', icon: '▼' };
-  return { text: 'Stable', color: 'text-gray-500', icon: '●' };
-};
+  const [analysis, setAnalysis] = useState(null);
+  const [delta, setDelta] = useState(null);
+  const [hasPrevious, setHasPrevious] = useState(false);
+  const [streak, setStreak] = useState(null); // Added state for streak
 
+  const trend = (value) => {
+    if (value == null) return null;
+    if (value < 0) return { text: 'Improved', color: 'text-green-600', icon: '▲' };
+    if (value > 0) return { text: 'Worsened', color: 'text-red-600', icon: '▼' };
+    return { text: 'Stable', color: 'text-gray-500', icon: '●' };
+  };
 
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const base = import.meta.env.VITE_API_BASE_URL || '';
+        const endpoint = `${base}/api/analyze/latest-with-delta`;
+        const token = localStorage.getItem('token');
 
-useEffect(() => {
-  async function fetchProfile() {
-    try {
-      const base = import.meta.env.VITE_API_BASE_URL || '';
-      const endpoint = `${base}/api/analyze/latest-with-delta`;
-      const token = localStorage.getItem('token');
+        const res = await axios.get(endpoint, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
-      const res = await axios.get(endpoint, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+        setAnalysis(res.data.analysis);
+        setDelta(res.data.delta);
+        setHasPrevious(Boolean(res.data.previousAnalysis));
 
-      setAnalysis(res.data.analysis);
-      setDelta(res.data.delta);
-      setHasPrevious(Boolean(res.data.previousAnalysis)); // ✅ correct
+        // --- MOCK STREAK DATA (Replace with actual API call later) ---
+        setStreak({
+          currentStreak: 5,
+          longestStreak: 12,
+          history: Array(14).fill(0).map((_, i) => ({
+            date: `Day ${i}`,
+            completed: Math.random() > 0.3 // Random true/false for demo
+          }))
+        });
 
-      console.log(hasPrevious);
-    } catch (err) {
-      console.log("Error fetching profile");
-      console.error(err);
-    } finally {
-      setLoading(false);
+      } catch (err) {
+        console.log("Error fetching profile");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
     }
-  }
 
-  fetchProfile();
-}, []);
+    fetchProfile();
+  }, []);
 
 
   if (loading) {
@@ -85,7 +97,6 @@ useEffect(() => {
   }
 
   const { raw, severity, overallScore, notes } = analysis;
-  console.log("profile", analysis);
 
   /* ---------------- Routine Logic ---------------- */
   const morningRoutine = [
@@ -103,7 +114,7 @@ useEffect(() => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-gray-900 py-10">
-      <div className="max-w-6xl mx-auto px-4 space-y-10">
+      <div className="max-w-6xl mx-auto px-4 space-y-8">
 
         {/* ---------------- PROFILE HEADER ---------------- */}
         <section className="bg-white dark:bg-gray-800 rounded-xl p-6 border">
@@ -131,122 +142,150 @@ useEffect(() => {
           </div>
         </section>
 
-        {/* ---------------- SKIN SUMMARY ---------------- */}
+        {/* ---------------- SKIN SUMMARY (Stat Cards) ---------------- */}
         <section>
-  <h2 className="text-xl font-semibold mb-4">
-    Current Skin Summary
-  </h2>
+          <h2 className="text-xl font-semibold mb-4">Current Skin Summary</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Acne */}
+            <StatCard
+              title="Acne"
+              value={raw.acne.label}
+              sub={`Count: ${raw.acne.count} • Severity: ${severity.acne}/100`}
+            >
+              {hasPrevious && (
+                <div className={`text-xs mt-1 ${trend(delta.acne)?.color}`}>
+                  {trend(delta.acne)?.icon} {trend(delta.acne)?.text} since last analysis
+                </div>
+              )}
+            </StatCard>
 
-  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Blackheads */}
+            <StatCard
+              title="Blackheads"
+              value={raw.blackheads.present ? 'Present' : 'None'}
+              sub={`Count: ${raw.blackheads.count} • Severity: ${severity.blackheads}/100`}
+            >
+              {hasPrevious && (
+                <div className={`text-xs mt-1 ${trend(delta.blackheads)?.color}`}>
+                  {trend(delta.blackheads)?.text}
+                </div>
+              )}
+            </StatCard>
 
-    {/* Acne */}
-    <StatCard
-      title="Acne"
-      value={raw.acne.label}
-      sub={`Count: ${raw.acne.count} • Severity: ${severity.acne}/100`}
-    >
-      {hasPrevious && (
-        <div className={`text-xs mt-1 ${trend(delta.acne)?.color}`}>
-          {trend(delta.acne)?.icon} {trend(delta.acne)?.text} since last analysis
-        </div>
-      )}
-    </StatCard>
+            {/* Pigmentation */}
+            <StatCard
+              title="Pigmentation"
+              value={raw.pigmentation.label}
+              sub={`Severity: ${severity.pigmentation}/100`}
+            >
+              {hasPrevious && (
+                <div className={`text-xs mt-1 ${trend(delta.pigmentation)?.color}`}>
+                  {trend(delta.pigmentation)?.text}
+                </div>
+              )}
+            </StatCard>
 
-    {/* Blackheads */}
-    <StatCard
-      title="Blackheads"
-      value={raw.blackheads.present ? 'Present' : 'None'}
-      sub={`Count: ${raw.blackheads.count} • Severity: ${severity.blackheads}/100`}
-    >
-      {hasPrevious && (
-        <div className={`text-xs mt-1 ${trend(delta.blackheads)?.color}`}>
-          {trend(delta.blackheads)?.text}
-        </div>
-      )}
-    </StatCard>
+            {/* Wrinkles */}
+            <StatCard
+              title="Wrinkles"
+              value={raw.wrinkles.label}
+              sub={`Severity: ${severity.wrinkles}/100`}
+            >
+              {hasPrevious && (
+                <div className={`text-xs mt-1 ${trend(delta.wrinkles)?.color}`}>
+                  {trend(delta.wrinkles)?.text}
+                </div>
+              )}
+            </StatCard>
+          </div>
+        </section>
 
-    {/* Pigmentation */}
-    <StatCard
-      title="Pigmentation"
-      value={raw.pigmentation.label}
-      sub={`Severity: ${severity.pigmentation}/100`}
-    >
-      {hasPrevious && (
-        <div className={`text-xs mt-1 ${trend(delta.pigmentation)?.color}`}>
-          {trend(delta.pigmentation)?.text}
-        </div>
-      )}
-    </StatCard>
+        {/* ---------------- NEW: IMPROVEMENT CHART ---------------- */}
+        {hasPrevious && delta && (
+          <section className="bg-white dark:bg-gray-800 p-6 rounded-xl border">
+            <h2 className="text-lg font-semibold mb-4">
+              Improvement Since Last Analysis
+            </h2>
 
-    {/* Wrinkles */}
-    <StatCard
-      title="Wrinkles"
-      value={raw.wrinkles.label}
-      sub={`Severity: ${severity.wrinkles}/100`}
-    >
-      {hasPrevious && (
-        <div className={`text-xs mt-1 ${trend(delta.wrinkles)?.color}`}>
-          {trend(delta.wrinkles)?.text}
-        </div>
-      )}
-    </StatCard>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={[
+                    { name: 'Acne', delta: delta.acne },
+                    { name: 'Wrinkles', delta: delta.wrinkles },
+                    { name: 'Pigmentation', delta: delta.pigmentation },
+                    { name: 'Blackheads', delta: delta.blackheads },
+                  ]}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip 
+                    cursor={{fill: 'transparent'}}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Bar
+                    dataKey="delta"
+                    fill="#22c55e"
+                    radius={[4, 4, 0, 0]}
+                    barSize={40}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
 
-  </div>
-</section>
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              Negative values indicate improvement (reduction in severity).
+            </p>
+          </section>
+        )}
 
+      
 
-        {/* ---------------- ANALYSIS SUMMARY ---------------- */}
+        {/* ---------------- NEW: ROUTINE CONSISTENCY ---------------- */}
         <section className="bg-white dark:bg-gray-800 p-6 rounded-xl border">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="text-indigo-600" />
-            <h2 className="text-lg font-semibold">Analysis Summary</h2>
-          </div>
+          <h2 className="text-lg font-semibold mb-4">Routine Consistency</h2>
 
-          <p className="text-sm text-gray-600 whitespace-pre-wrap">
-            {notes}
-          </p>
-        </section>
-
-        {/* ---------------- ROUTINE ---------------- */}
-        <section>
-          <h2 className="text-xl font-semibold mb-4">
-            Your Personalized Routine
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            {/* Morning */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border">
-              <div className="flex items-center gap-2 mb-4">
-                <Sun className="text-yellow-500" />
-                <h3 className="font-semibold">Morning</h3>
+          <div className="flex flex-col sm:flex-row items-center gap-8">
+            <div className="flex gap-8">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-indigo-600">
+                  {streak?.currentStreak || 0}
+                </div>
+                <div className="text-sm text-gray-500">Current Streak</div>
               </div>
 
-              <ul className="space-y-3">
-                {morningRoutine.map((step, i) => (
-                  <RoutineItem key={i} step={step} note="Daily" />
-                ))}
-              </ul>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600">
+                  {streak?.longestStreak || 0}
+                </div>
+                <div className="text-sm text-gray-500">Best Streak</div>
+              </div>
             </div>
 
-            {/* Night */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border">
-              <div className="flex items-center gap-2 mb-4">
-                <Moon className="text-indigo-500" />
-                <h3 className="font-semibold">Night</h3>
-              </div>
-
-              <ul className="space-y-3">
-                {nightRoutine.map((step, i) => (
-                  <RoutineItem key={i} step={step} note="Night care" />
+            <div className="flex-1">
+              <div className="flex gap-2 flex-wrap justify-center sm:justify-end">
+                {streak?.history?.slice(-14).map((d, i) => (
+                  <div
+                    key={i}
+                    className={`w-6 h-6 rounded-md transition-all hover:scale-110 ${
+                      d.completed ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
+                    }`}
+                    title={d.date}
+                  />
                 ))}
-              </ul>
+              </div>
+              <p className="text-xs text-gray-400 mt-2 text-center sm:text-right">
+                Last 14 days activity
+              </p>
             </div>
           </div>
         </section>
+
+        
 
         {/* Disclaimer */}
-        <div className="text-xs text-gray-500 text-center">
+        <div className="text-xs text-gray-500 text-center pt-4">
           SkinWise provides informational guidance only. Not medical advice.
         </div>
 
