@@ -1,28 +1,47 @@
-// The main application file, now with protected routes.
-
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import Analyze from './pages/Analyze.jsx';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-import HomePage from './pages/Homepage';
-import ConsultationPage from './pages/ConsultationPage.jsx';
-import AboutPage from './pages/AboutPage';
-import ContactPage from './pages/ContactPage';
-import RegisterPage from './pages/RegisterPage';
-import LoginPage from './pages/LoginPage.jsx';
-import ProtectedRoute from './components/ProtectedRoute'; 
-import QuizPage from './pages/QuizPage.jsx';
-import RoutinePage from './pages/Routine.jsx';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import Profile from './pages/ProfilePage.jsx';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext'; 
-import BlogPage from './pages/BlogPage.jsx';
-import AdvicePage from './pages/AdvicePage.jsx';
-import AdminDashboard from './pages/AdminDashboard.jsx';
-import AdminRoute from './components/AdminRoute.jsx';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+// Layouts
+import AppLayout from './components/layout/AppLayout';
+import AuthLayout from './components/layout/AuthLayout';
+import DashboardLayout from './components/layout/DashboardLayout';
+
+// Public Pages
+import HomePage from './pages/public/HomePage';
+import AboutPage from './pages/public/AboutPage';
+import FeaturesPage from './pages/public/FeaturesPage';
+import ContactPage from './pages/ContactPage';
+import BlogPage from './pages/BlogPage';
+import ConsultationPage from './pages/ConsultationPage';
+import AdvicePage from './pages/AdvicePage';
+
+// Auth Pages
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
+import QuizPage from './pages/QuizPage';
+
+// App (Dashboard) Pages
+import DashboardPage from './pages/app/DashboardPage';
+import AnalyzePage from './pages/app/AnalyzePage';
+import AnalysisResultPage from './pages/app/AnalysisResultPage';
+import HistoryPage from './pages/app/HistoryPage';
+import ProgressPage from './pages/app/ProgressPage';
+import RoutinePage from './pages/app/RoutinePage';
+import ProfilePage from './pages/ProfilePage';
+
+// Portals
+import AdminDashboard from './pages/admin/AdminDashboard';
+import BrandDashboard from './pages/brand/BrandDashboard';
+
+// Guards
+import ProtectedRoute from './components/ProtectedRoute'; 
+import AdminRoute from './components/AdminRoute';
+import BrandRoute from './components/BrandRoute';
+
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -40,9 +59,9 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-8 text-center">
-          <h1 className="text-4xl font-bold text-red-500 mb-4">Oops, something went wrong.</h1>
-          <p className="text-gray-600">We are sorry for the inconvenience. Please try refreshing the page.</p>
+        <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900 p-8 text-center">
+          <h1 className="text-4xl font-bold text-rose-500 mb-4">Oops, something went wrong.</h1>
+          <p className="text-slate-600 dark:text-slate-400">We are sorry for the inconvenience. Please try refreshing the page.</p>
         </div>
       );
     }
@@ -50,53 +69,61 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-
-// ---------------------------------------------------------
-
 function App() {
   return (
     <Router>
       <AuthProvider>
-           <ThemeProvider>
-        <ErrorBoundary>
-          <ToastContainer position="top-right" autoClose={5000} />
-          
-          
-          <div className="font-sans antialiased bg-gray-100 dark:bg-gray-900 min-h-screen flex flex-col">
-            <Navbar />
-            <div className="flex-grow">
-              <Routes>
-                {/* --- Public Routes --- */}
+        <ThemeProvider>
+          <ErrorBoundary>
+            <ToastContainer position="top-right" autoClose={5000} />
+            <Routes>
+              
+              {/* --- Public App Layout --- */}
+              <Route element={<AppLayout />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/about" element={<AboutPage />} />
+                <Route path="/features" element={<FeaturesPage />} />
                 <Route path="/contact" element={<ContactPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/analyze" element={<Analyze />} />
-                <Route path="/quiz" element={<QuizPage />} />
-                <Route path="/routine" element={<RoutinePage />} />
-                <Route path="/profile" element={<Profile />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/advice" element={<AdvicePage />} />
                 <Route path="/consultation" element={<ConsultationPage />} />
-                 
-                <Route path="/admin" element={
-                  <AdminRoute>
-                    <AdminDashboard />
-                  </AdminRoute>
-                     }/>
+                <Route path="/quiz" element={<QuizPage />} />
+              </Route>
 
-                {/* --- Protected Routes --- */}
-                <Route element={<ProtectedRoute />}>
-                  
-                  {/* Add any other future protected routes here */}
+              {/* --- Auth Layout --- */}
+              <Route element={<AuthLayout />}>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+              </Route>
+
+              {/* --- App Dashboard Layout (Protected) --- */}
+              <Route element={<ProtectedRoute />}>
+                <Route element={<DashboardLayout />}>
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/analyze" element={<AnalyzePage />} />
+                  <Route path="/analysis/:id" element={<AnalysisResultPage />} />
+                  <Route path="/history" element={<HistoryPage />} />
+                  <Route path="/progress" element={<ProgressPage />} />
+                  <Route path="/routine" element={<RoutinePage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
                 </Route>
-              </Routes>
-            </div>
-            <Footer />
-          </div>
-        </ErrorBoundary>
-      </ThemeProvider>
+              </Route>
+
+              {/* --- Admin Portal --- */}
+              <Route path="/admin" element={<AdminRoute><AppLayout /></AdminRoute>}>
+                <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                <Route path="dashboard" element={<AdminDashboard />} />
+              </Route>
+
+              {/* --- Brand Portal --- */}
+              <Route path="/brand" element={<BrandRoute><AppLayout /></BrandRoute>}>
+                <Route index element={<Navigate to="/brand/dashboard" replace />} />
+                <Route path="dashboard" element={<BrandDashboard />} />
+              </Route>
+
+            </Routes>
+          </ErrorBoundary>
+        </ThemeProvider>
       </AuthProvider>
     </Router>
   );

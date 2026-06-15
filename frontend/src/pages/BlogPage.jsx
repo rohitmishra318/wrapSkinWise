@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Search } from 'lucide-react';
-
+import SEO from '../components/SEO.jsx';
 /* -------------------------------------------
    Helper: Decide image based on content
 -------------------------------------------- */
@@ -61,6 +61,9 @@ export default function BlogPage() {
   };
 
   return (
+      
+    <><SEO title="Blog" description="Read the latest skincare articles and advice." />
+
     <div className="min-h-screen bg-slate-50 dark:bg-gray-900 text-slate-800 dark:text-gray-100">
       <div className="max-w-5xl mx-auto px-4 py-12 space-y-8">
 
@@ -139,5 +142,6 @@ export default function BlogPage() {
 
       </div>
     </div>
+   </>
   );
 }

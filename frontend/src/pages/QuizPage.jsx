@@ -1,7 +1,7 @@
 // frontend/src/pages/Quiz.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import SEO from '../components/SEO.jsx';
 /**
  * Quiz.jsx
  * - Single-question-per-screen quiz (tailwind styling)
@@ -216,6 +216,8 @@ export default function Quiz() {
     const type = pickSkinType(scores);
     const meta = TYPE_META[type] || TYPE_META.normal;
     return (
+      <><SEO title="Quiz Results" description="View your skin type and personalized routine." />
+
       <div className="max-w-3xl mx-auto p-6">
         <div className="bg-slate-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-300 dark:border-gray-700">
           <h1 className="text-2xl font-semibold mb-2">Your Skin Type</h1>
@@ -256,6 +258,7 @@ export default function Quiz() {
           </div>
         </div>
       </div>
+     </>
     );
   }
 

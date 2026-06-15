@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, Mail, MessageSquare, Phone, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SEO from '../components/SEO.jsx';
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -32,6 +33,8 @@ const ContactPage = () => {
   };
 
   return (
+            <><SEO title="Contact Us" description="Get in touch with us for any inquiries or support." />
+
     // The main background is handled by index.css
     <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="container mx-auto max-w-6xl">
@@ -124,6 +127,7 @@ const ContactPage = () => {
         </div>
       </div>
     </div>
+   </>
   );
 };
 

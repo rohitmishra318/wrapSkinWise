@@ -1,364 +1,158 @@
-// frontend/src/pages/Analyze.jsx
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
 import { useNavigate } from 'react-router-dom';
+import { useAnalysisStore } from '../stores/analysisStore';
+import api from '../utils/api';
+import AnalysisProgressTracker from '../components/AnalysisProgressTracker';
+import { UploadCloud, Camera, AlertCircle } from 'lucide-react';
+import { toast } from 'react-toastify';
 
-/**
- * Analyze Page
- * - Collects user answers + optional image upload
- * - Sends to backend endpoint: POST /api/analyze (multipart/form-data)
- * - Expects backend response JSON like:
- *   { acne: {...}, blackheads: {...}, wrinkles: {...}, pigmentation: {...}, recommendations: "..." }
- *
- * Make sure VITE_API_BASE_URL is set in your env or proxy /api requests in dev.
- */
+export default function AnalyzePage() {
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const { activeJobId, setActiveJob } = useAnalysisStore();
+  const [isUploading, setIsUploading] = useState(false);
 
-const initialConcerns = {
-  acne: false,
-  blackheads: false,
-  wrinkles: false,
-  pigmentation: false,
-  dryness: false,
-  oiliness: false,
-  sensitivity: false,
-};
+  const onDrop = useCallback((acceptedFiles) => {
+    if (acceptedFiles?.length > 0) {
+      const selected = acceptedFiles[0];
+      if (selected.size > 15 * 1024 * 1024) {
+        toast.error('Image size must be under 15MB');
+        return;
+      }
+      setFile(selected);
+      setPreview(URL.createObjectURL(selected));
+    }
+  }, []);
 
-function getImprovementBadge(delta) {
-  if (delta == null) return null;
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 'image/jpeg': [], 'image/png': [], 'image/webp': [] },
+    maxFiles: 1,
+    multiple: false
+  });
 
-  if (delta > 5) {
-    return { text: "Improved", color: "text-green-600" };
-  }
-  if (delta < -5) {
-    return { text: "Worsened", color: "text-red-600" };
-  }
-  return { text: "Stable", color: "text-gray-500" };
-}
+  const handleSubmit = async () => {
+    if (!file) return;
+    
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
 
-
-
-export default function Analyze() {
-  const navigate = useNavigate();
-  const [fullName, setFullName] = useState('');
-  const [age, setAge] = useState('');
-  const [gender, setGender] = useState('prefer-not');
-  const [skinType, setSkinType] = useState('normal');
-  const [concerns, setConcerns] = useState(initialConcerns);
-  const [sleepHours, setSleepHours] = useState(7);
-  const [waterLiters, setWaterLiters] = useState(2);
-  const [smokes, setSmokes] = useState(false);
-  const [productsUsed, setProductsUsed] = useState(''); // comma separated
-  const [imageFile, setImageFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
-
-  const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
-
-  // handle checkbox group
-  const toggleConcern = (key) => {
-    setConcerns(prev => ({ ...prev, [key]: !prev[key] }));
+      const { data } = await api.post('/analyze', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      setActiveJob(data.data.jobId);
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || 'Upload failed. Please try again.';
+      toast.error(msg);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  function handleImageChange(e) {
-    setError(null);
-    const f = e.target.files && e.target.files[0];
-    if (!f) {
-      setImageFile(null);
-      setPreviewUrl(null);
-      return;
-    }
-    // Basic client-side validation
-    if (!/^image\//.test(f.type)) {
-      setError('Please upload a valid image file.');
-      return;
-    }
-    if (f.size > 5 * 1024 * 1024) {
-      setError('Image too large. Max 5MB allowed.');
-      return;
-    }
-    setImageFile(f);
-    const url = URL.createObjectURL(f);
-    setPreviewUrl(url);
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError(null);
-    setResult(null);
-
-    // basic validation
-    if (!age || isNaN(Number(age)) || Number(age) <= 0) {
-      setError('Please enter a valid age.');
-      return;
-    }
-    if (!fullName.trim()) {
-      setError('Please enter your name (or nickname).');
-      return;
-    }
-
-    setSubmitting(true);
-
-    try {
-      // Build multipart payload: JSON metadata + optional image file
-      const formData = new FormData();
-      const metadata = {
-        name: fullName.trim(),
-        age: Number(age),
-        gender,
-        skinType,
-        concerns: Object.keys(concerns).filter(k => concerns[k]),
-        lifestyle: {
-          sleepHours: Number(sleepHours),
-          waterLiters: Number(waterLiters),
-          smokes: Boolean(smokes),
-        },
-        productsUsed: productsUsed.split(',').map(s => s.trim()).filter(Boolean),
-        timestamp: new Date().toISOString(),
-      };
-
-      formData.append('metadata', JSON.stringify(metadata));
-      if (imageFile) formData.append('image', imageFile);
-      console.log('Submitting metadata:', metadata);
-
-      // Replace base URL depending on your environment:
-      // - In dev you might proxy /api to your backend; then use '/api/analyze'
-      // - In production use VITE_API_BASE_URL env var
-      const base = import.meta.env.VITE_API_BASE_URL || '';
-      const endpoint = `${base}/api/analyze`;
-
-      const token = localStorage.getItem('token');
-      console
-const res = await axios.post(endpoint, formData, {
-  headers: {
-    'Content-Type': 'multipart/form-data',
-    Authorization: `Bearer ${token}`,
-  },
-  timeout: 120000,
-});
-
-
-      setResult(res.data);
-      console.log("here");
-      console.log('Analysis result:', res.data);
-      console.log(result);
-      // Optionally navigate to a result page:
-      // navigate(`/result/${res.data.id}`);
-    } catch (err) {
-      console.error(err);
-      setError(
-        err?.response?.data?.message ||
-        err?.message ||
-        'Failed to analyze. Please try again.'
-      );
-    } finally {
-      setSubmitting(false);
-    }
+  if (activeJobId) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 mt-10">
+        <AnalysisProgressTracker jobId={activeJobId} />
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-4">SkinWise — Skin Analysis</h1>
-      <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
-        Answer a few quick questions and optionally upload a frontal photo (no heavy makeup). This helps our analyser give you personalized suggestions and a short report.
-      </p>
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Analyze Your Skin</h1>
+        <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          Upload a clear, frontal photo of your face to get a comprehensive dermatological analysis and personalized routine.
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
-        {error && <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</div>}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <label className="flex flex-col">
-            <span className="text-sm text-gray-700 dark:text-gray-200">Name</span>
-            <input value={fullName} onChange={(e)=>setFullName(e.target.value)} placeholder="Rahul / Riya" className="mt-1 p-2 rounded border dark:bg-gray-900" />
-          </label>
-
-          <label className="flex flex-col">
-            <span className="text-sm text-gray-700 dark:text-gray-200">Age</span>
-            <input value={age} onChange={(e)=>setAge(e.target.value)} type="number" min="1" className="mt-1 p-2 rounded border dark:bg-gray-900" />
-          </label>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <label className="flex flex-col">
-            <span className="text-sm text-gray-700 dark:text-gray-200">Gender</span>
-            <select value={gender} onChange={(e)=>setGender(e.target.value)} className="mt-1 p-2 rounded border dark:bg-gray-900">
-              <option value="prefer-not">Prefer not</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
-          </label>
-
-          <label className="flex flex-col">
-            <span className="text-sm text-gray-700 dark:text-gray-200">Skin Type</span>
-            <select value={skinType} onChange={(e)=>setSkinType(e.target.value)} className="mt-1 p-2 rounded border dark:bg-gray-900">
-              <option value="normal">Normal</option>
-              <option value="dry">Dry</option>
-              <option value="oily">Oily</option>
-              <option value="combination">Combination</option>
-              <option value="sensitive">Sensitive</option>
-            </select>
-          </label>
-
-          <label className="flex flex-col">
-            <span className="text-sm text-gray-700 dark:text-gray-200">Products you use (comma separated)</span>
-            <input value={productsUsed} onChange={(e)=>setProductsUsed(e.target.value)} placeholder="Niacinamide, Sunscreen" className="mt-1 p-2 rounded border dark:bg-gray-900" />
-          </label>
-        </div>
-
-        <fieldset className="border rounded p-3">
-          <legend className="px-2 text-sm font-medium text-gray-700 dark:text-gray-200">Skin concerns (select all that apply)</legend>
-          <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {Object.keys(initialConcerns).map((k) => (
-              <label key={k} className="inline-flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-900 rounded">
-                <input
-                  type="checkbox"
-                  checked={!!concerns[k]}
-                  onChange={() => toggleConcern(k)}
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-200 capitalize">{k.replace('_',' ')}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <label className="flex flex-col">
-            <span className="text-sm text-gray-700 dark:text-gray-200">Sleep (hrs)</span>
-            <input type="number" min="0" max="24" value={sleepHours} onChange={(e)=>setSleepHours(e.target.value)} className="mt-1 p-2 rounded border dark:bg-gray-900" />
-          </label>
-
-          <label className="flex flex-col">
-            <span className="text-sm text-gray-700 dark:text-gray-200">Water (L/day)</span>
-            <input type="number" min="0" step="0.1" value={waterLiters} onChange={(e)=>setWaterLiters(e.target.value)} className="mt-1 p-2 rounded border dark:bg-gray-900" />
-          </label>
-
-          <label className="flex items-center gap-2">
-            <input type="checkbox" checked={smokes} onChange={()=>setSmokes(s=>!s)} />
-            <span className="text-sm text-gray-700 dark:text-gray-200">Smoker</span>
-          </label>
-        </div>
-
-        <div>
-          <label className="flex flex-col">
-            <span className="text-sm text-gray-700 dark:text-gray-200">Upload a frontal photo (optional)</span>
-            <input type="file" accept="image/*" onChange={handleImageChange} className="mt-2" />
-            <small className="text-xs text-gray-500">Clear frontal photo, neutral lighting, no heavy make-up. Max 5MB.</small>
-
-            {previewUrl && (
-              <div className="mt-3">
-                <div className="text-xs text-gray-600 mb-1">Preview</div>
-                <img src={previewUrl} alt="preview" className="w-48 h-48 object-cover rounded shadow-sm" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="md:col-span-2">
+          {!preview ? (
+            <div 
+              {...getRootProps()} 
+              className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-colors ${
+                isDragActive ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-gray-300 dark:border-gray-700 hover:border-emerald-400 dark:hover:border-emerald-500 bg-gray-50 dark:bg-gray-800/50'
+              }`}
+            >
+              <input {...getInputProps()} />
+              <div className="flex flex-col items-center justify-center">
+                <UploadCloud className="w-16 h-16 text-gray-400 mb-4" />
+                <p className="text-lg font-medium text-gray-700 dark:text-gray-200 mb-2">
+                  {isDragActive ? 'Drop image here' : 'Drag & drop a photo here'}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  or click to select a file
+                </p>
+                <div className="mt-4 flex gap-2 text-xs text-gray-400">
+                  <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">JPEG</span>
+                  <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">PNG</span>
+                  <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">WEBP</span>
+                  <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Max 15MB</span>
+                </div>
               </div>
-            )}
-          </label>
-        </div>
-
-        <div className="flex justify-end gap-3">
-          <button type="button" onClick={()=>navigate('/')} className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">Cancel</button>
-          <button type="submit" disabled={submitting} className={`px-4 py-2 rounded font-medium text-white ${submitting ? 'bg-rose-300' : 'bg-rose-500 hover:bg-rose-600'}`}>
-            {submitting ? 'Analyzing...' : 'Analyze My Skin'}
-          </button>
-        </div>
-      </form>
-
-      {/* Result area */}
-      {result && (
-        <div className="mt-6 bg-white dark:bg-gray-800 p-5 rounded shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Analysis Results</h2>
-
-          {/* show uploaded image if present */}
-          {result.imageUrl && (
-            <div className="mb-3">
-              <img src={result.imageUrl} alt="uploaded" className="w-48 h-48 object-cover rounded" />
             </div>
-          )}
-
-          {/* show detector outputs (safe rendering if keys missing) */}
-          {result?.analysis && (
-  <div className="mt-6 bg-white dark:bg-gray-800 p-5 rounded shadow-sm">
-    <h2 className="text-lg font-semibold mb-3">Analysis Results</h2>
-
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {/* Acne */}
-      <div className="p-3 border rounded">
-        <div className="text-sm text-gray-600">Acne</div>
-        <div className="font-medium">
-          {result.analysis.raw.acne.label}
-          <span className="text-xs text-gray-500 ml-2">
-            (Count: {result.analysis.raw.acne.count})
-          </span>
-        </div>
-        <div className="text-xs text-indigo-600 mt-1">
-          Severity: {result.analysis.severity.acne}/100
-        </div>
-      </div>
-
-      {/* Blackheads */}
-      <div className="p-3 border rounded">
-        <div className="text-sm text-gray-600">Blackheads</div>
-        <div className="font-medium">
-          {result.analysis.raw.blackheads.present ? "Present" : "None"}
-          <span className="text-xs text-gray-500 ml-2">
-            (Count: {result.analysis.raw.blackheads.count})
-          </span>
-        </div>
-        <div className="text-xs text-indigo-600 mt-1">
-          Severity: {result.analysis.severity.blackheads}/100
-        </div>
-      </div>
-
-      {/* Wrinkles */}
-      <div className="p-3 border rounded">
-        <div className="text-sm text-gray-600">Wrinkles</div>
-        <div className="font-medium">
-          {result.analysis.raw.wrinkles.label}
-          <span className="text-xs text-gray-500 ml-2">
-            (Edge Density: {result.analysis.raw.wrinkles.edge_density})
-          </span>
-        </div>
-        <div className="text-xs text-indigo-600 mt-1">
-          Severity: {result.analysis.severity.wrinkles}/100
-        </div>
-      </div>
-
-      {/* Pigmentation */}
-      <div className="p-3 border rounded">
-        <div className="text-sm text-gray-600">Pigmentation</div>
-        <div className="font-medium">
-          {result.analysis.raw.pigmentation.label}
-          <span className="text-xs text-gray-500 ml-2">
-            (Score: {result.analysis.raw.pigmentation.score})
-          </span>
-        </div>
-        <div className="text-xs text-indigo-600 mt-1">
-          Severity: {result.analysis.severity.pigmentation}/100
-        </div>
-      </div>
-    </div>
-
-    {/* Recommendations */}
-    <div className="mt-4 p-3 bg-rose-50 rounded">
-      <h3 className="font-medium">Recommendations</h3>
-      <p className="text-sm whitespace-pre-wrap">
-        {result.analysis.notes}
-      </p>
-    </div>
-  </div>
-)}
-
-
-
-
-          {/* Optional recommendations */}
-          {result.recommendations && (
-            <div className="mt-4 p-3 bg-rose-50 dark:bg-rose-900/20 rounded">
-              <h3 className="font-medium text-gray-800 dark:text-gray-100">Recommendations</h3>
-              <p className="text-sm text-gray-700 dark:text-gray-200 mt-2 whitespace-pre-wrap">{result.recommendations}</p>
+          ) : (
+            <div className="relative rounded-2xl overflow-hidden bg-black aspect-[3/4] max-w-md mx-auto shadow-lg">
+              <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+              <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent flex justify-between items-center">
+                <button 
+                  onClick={() => { setFile(null); setPreview(null); }}
+                  className="text-white text-sm hover:underline"
+                >
+                  Change Photo
+                </button>
+                <button 
+                  onClick={handleSubmit}
+                  disabled={isUploading}
+                  className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-lg disabled:opacity-50 transition-colors"
+                >
+                  {isUploading ? 'Uploading...' : 'Start Analysis'}
+                </button>
+              </div>
             </div>
           )}
         </div>
-      )}
+
+        <div className="space-y-6">
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-xl border border-blue-100 dark:border-blue-800">
+            <h3 className="font-semibold text-blue-900 dark:text-blue-300 flex items-center gap-2 mb-3">
+              <Camera size={18} /> Photo Guidelines
+            </h3>
+            <ul className="space-y-3 text-sm text-blue-800 dark:text-blue-200">
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500 mt-0.5">•</span>
+                Face directly to the camera (no extreme angles)
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500 mt-0.5">•</span>
+                Good, even lighting (natural daylight is best)
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500 mt-0.5">•</span>
+                Remove glasses and pull hair back
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500 mt-0.5">•</span>
+                No heavy makeup (for accurate skin assessment)
+              </li>
+            </ul>
+          </div>
+
+          <div className="bg-amber-50 dark:bg-amber-900/20 p-5 rounded-xl border border-amber-100 dark:border-amber-800 text-sm">
+            <h3 className="font-semibold text-amber-900 dark:text-amber-300 flex items-center gap-2 mb-2">
+              <AlertCircle size={16} /> Privacy Note
+            </h3>
+            <p className="text-amber-800 dark:text-amber-200">
+              Your photos are securely processed and never shared with third parties. We use state-of-the-art AI to assess your skin health locally.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

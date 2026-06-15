@@ -244,10 +244,6 @@ for image_path in image_paths:
 
 
 
-    
-
-    
-
     # ========== BLACKHEADS ==========
     blur = cv2.GaussianBlur(gray, (7, 7), 0)
     _, thresh = cv2.threshold(blur, 55, 255, cv2.THRESH_BINARY_INV)

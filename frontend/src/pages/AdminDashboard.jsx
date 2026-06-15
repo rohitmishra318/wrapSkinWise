@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import AdminStatCard from '../components/AdminStatCard';
+import SEO from '../components/SEO.jsx';
 
 export default function AdminDashboard() {
   const [data, setData] = useState(null);
@@ -22,6 +23,11 @@ export default function AdminDashboard() {
   }
 
   return (
+
+       <>
+       <SEO title="Admin Dashboard" description="View analytics and manage the SkinWise platform." />
+       
+
     <div className="p-8 space-y-8">
       <h1 className="text-2xl font-bold">Admin Analytics Dashboard</h1>
 
@@ -52,5 +58,6 @@ export default function AdminDashboard() {
         </div>
       </section>
     </div>
-  );
+  
+  </>);
 }

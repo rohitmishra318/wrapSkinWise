@@ -102,9 +102,7 @@ def create_skin_mask_from_landmarks(face_landmarks, h, w):
 
 
 
-IMAGE_PATH = "input.jpg"      # input image
-OUTPUT_PATH = "output.jpg"    # annotated result
-
+cap = cv2.VideoCapture(0)
 
 
 def draw_ignored_regions(face_bgr, face_landmarks, w, h):

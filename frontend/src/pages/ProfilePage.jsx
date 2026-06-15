@@ -13,6 +13,7 @@ import {
   Sun,
   Moon
 } from 'lucide-react';
+import SEO from '../components/SEO.jsx';
 
 /* ---------------- Small UI Components ---------------- */
 
@@ -113,6 +114,9 @@ export default function Profile() {
   ].filter(Boolean);
 
   return (
+      <> 
+        <SEO title="Profile" description="View your profile and skin analysis." />
+
     <div className="min-h-screen bg-slate-50 dark:bg-gray-900 py-10">
       <div className="max-w-6xl mx-auto px-4 space-y-8">
 
@@ -291,5 +295,6 @@ export default function Profile() {
 
       </div>
     </div>
+  </>
   );
 }
