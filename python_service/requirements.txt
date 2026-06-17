@@ -6,6 +6,6 @@ torch
 torchvision
 transformers
 Pillow
-numpy
+numpy<2
 scipy
 onnxruntime

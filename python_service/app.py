@@ -54,15 +54,16 @@ def analyze_image():
     blackheads, wrinkles, pigmentation, hydration = condition_analyzer.analyze(img, skin_mask, zone_masks)
     zonal_severity = zone_mapper.compute_zone_scores(img, zone_masks, detections)
 
+    acne_label = "High" if total_count > 15 else "Moderate" if total_count > 5 else "Low"
     raw = {
-        "acne": {"label": "moderate" if total_count > 5 else "low", "count": total_count, "totalArea": total_area},
+        "acne": {"label": acne_label, "count": total_count, "totalArea": total_area},
         "blackheads": blackheads,
         "wrinkles": wrinkles,
         "pigmentation": pigmentation,
         "hydration": hydration
     }
 
-    severity, overall_score, iga_grade = severity_scorer.compute(raw, fitzpatrick)
+    severity, overall_score, iga_grade, recommendations = severity_scorer.compute(raw, fitzpatrick)
 
     annotated_img_bytes = annotator.draw(img, detections, zone_masks)
     annotated_b64 = base64.b64encode(annotated_img_bytes).decode('utf-8')
@@ -74,9 +75,10 @@ def analyze_image():
         "overallScore": overall_score,
         "igaGrade": iga_grade,
         "fitzpatrickEstimate": fitzpatrick,
+        "recommendations": recommendations,
         "annotatedImageBase64": annotated_b64,
         "processingTimeMs": 0,
-        "modelVersion": "v2.0"
+        "modelVersion": "v2.0-merged"
     }
 
     return jsonify(response)
