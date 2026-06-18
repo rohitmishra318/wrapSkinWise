@@ -17,6 +17,9 @@ const { BullAdapter } = require('@bull-board/api/bullAdapter');
 const { ExpressAdapter } = require('@bull-board/express');
 const { analysisQueue } = require('./config/bull');
 
+// Initialize workers
+require('./workers/analysisWorker');
+
 const app = express();
 const server = http.createServer(app);
 
@@ -24,6 +27,7 @@ initSocket(server);
 
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(require('path').join(__dirname, 'uploads')));
 
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/wrapskinwise', {
   useNewUrlParser: true,

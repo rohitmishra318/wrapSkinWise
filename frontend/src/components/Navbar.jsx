@@ -61,7 +61,7 @@ const Navbar = () => {
 
               <div className="hidden md:flex items-center gap-4">
                 <Link to="/advice" className="text-sm text-slate-700 dark:text-gray-200 hover:text-indigo-600">
-                  Advice
+                  Advices
                 </Link>
                 <Link to="/shop" className="text-sm text-slate-700 dark:text-gray-200 hover:text-indigo-600 flex items-center gap-1">
                   <ShoppingBag size={14} /> Shop

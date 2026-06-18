@@ -25,7 +25,8 @@ analysisQueue.process(async (job) => {
 
     let srResultData;
     try {
-      const srResponse = await axios.post(`${process.env.SR_SERVICE_URL}/enhance`, srFormData, {
+      const srUrl = process.env.SR_SERVICE_URL || 'http://localhost:5001';
+      const srResponse = await axios.post(`${srUrl}/enhance`, srFormData, {
         headers: srFormData.getHeaders()
       });
       srResultData = srResponse.data;
@@ -67,7 +68,8 @@ analysisQueue.process(async (job) => {
 
     io.to(`job:${jobId}`).emit('job:status', { jobId, status: 'analyzing', progress: 70 });
 
-    const mlResponse = await axios.post(`${process.env.PYTHON_SERVICE_URL}/analyze-image`, mlFormData, {
+    const pythonUrl = process.env.PYTHON_SERVICE_URL || 'http://localhost:7000';
+    const mlResponse = await axios.post(`${pythonUrl}/analyze-image`, mlFormData, {
       headers: mlFormData.getHeaders()
     });
 
