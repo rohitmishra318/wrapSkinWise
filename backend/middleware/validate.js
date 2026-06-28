@@ -1,5 +1,21 @@
+const sanitizeNoSQL = (obj) => {
+  if (obj instanceof Object) {
+    for (let key in obj) {
+      if (key.startsWith('$')) {
+        delete obj[key];
+      } else if (typeof obj[key] === 'object') {
+        sanitizeNoSQL(obj[key]);
+      }
+    }
+  }
+};
+
 const validate = (schema) => (req, res, next) => {
   try {
+    sanitizeNoSQL(req.body);
+    sanitizeNoSQL(req.query);
+    sanitizeNoSQL(req.params);
+
     if (schema.body) {
       req.body = schema.body.parse(req.body);
     }

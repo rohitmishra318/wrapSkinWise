@@ -6,11 +6,12 @@ const validate = require('../middleware/validate');
 const { analyzeQuerySchema } = require('../schemas/analyzeSchema');
 const SkinAnalysis = require('../models/SkinAnalysis');
 const redisClient = require('../config/redis');
+const { analyzeLimiter } = require('../middleware/ratelimiter');
 
 const router = express.Router();
 const upload = multer();
 
-router.post('/', authMiddleware, upload.single('image'), validate(analyzeQuerySchema), analyzeController.analyzeImage);
+router.post('/', authMiddleware, analyzeLimiter, upload.single('image'), validate(analyzeQuerySchema), analyzeController.analyzeImage);
 router.get('/job/:jobId', authMiddleware, analyzeController.getJobStatus);
 router.get('/:id/image/:type', authMiddleware, analyzeController.getAnalysisImage);
 

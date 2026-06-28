@@ -6,10 +6,12 @@ const AnalysisJob = require('../models/AnalysisJob');
 const SkinAnalysis = require('../models/SkinAnalysis');
 const axios = require('axios');
 const FormData = require('form-data');
+const logger = require('../config/logger');
 
 analysisQueue.process(async (job) => {
-  const { jobId, uid, imageS3Key, city } = job.data;
+  const { jobId, uid, imageS3Key, city, requestId } = job.data;
   const io = getIo();
+  const logContext = { jobId, uid, requestId };
 
   try {
     // Step 1: Update job status
@@ -22,10 +24,11 @@ analysisQueue.process(async (job) => {
     // Step 3: POST image to sr_service
     const srFormData = new FormData();
     srFormData.append('image', imageBuffer, { filename: 'upload.jpg' });
+    if (requestId) srFormData.append('requestId', requestId);
 
     let srResultData;
     try {
-      const srUrl = process.env.SR_SERVICE_URL || 'http://localhost:5001';
+      const srUrl = process.env.SR_SERVICE_URL || 'http://localhost:7001';
       const srResponse = await axios.post(`${srUrl}/enhance`, srFormData, {
         headers: srFormData.getHeaders()
       });
@@ -57,6 +60,7 @@ analysisQueue.process(async (job) => {
     // Step 6: POST to python_service
     const mlFormData = new FormData();
     mlFormData.append('image', finalImageBuffer, { filename: 'analyze.jpg' });
+    if (requestId) mlFormData.append('requestId', requestId);
     
     // Pass metadata
     const metadata = {
@@ -127,7 +131,7 @@ analysisQueue.process(async (job) => {
     });
 
   } catch (error) {
-    console.error('Job failed', error);
+    logger.error('Job failed', { ...logContext, error: error.message, stack: error.stack });
     await AnalysisJob.findOneAndUpdate({ jobId }, { status: 'failed', errorMessage: error.message });
     io.to(`job:${jobId}`).emit('job:failed', { jobId, error: error.message });
   }

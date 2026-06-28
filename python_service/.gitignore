@@ -21,3 +21,6 @@ output/
 
 # Torch cache
 .cache/
+
+
+node_modules/
