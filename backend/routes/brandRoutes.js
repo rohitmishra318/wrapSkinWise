@@ -11,4 +11,7 @@ router.get('/analytics/overview', brandController.getAnalyticsOverview);
 router.get('/analytics/skin-distribution', brandController.getSkinDistribution);
 router.post('/validate-key', brandController.validateKey);
 
+
+
+
 module.exports = router;

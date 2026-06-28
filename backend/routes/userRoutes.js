@@ -3,10 +3,21 @@ const authMiddleware = require('../middleware/authMiddleware');
 const User = require('../models/User');
 const DailyCheckin = require('../models/DailyCheckin');
 const redisClient = require('../config/redis');
+const { deleteUserAccount } = require('../services/userDeletionService');
 
 const router = express.Router();
 
 router.use(authMiddleware);
+
+router.delete('/account', async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    await deleteUserAccount(uid);
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Failed to delete account' } });
+  }
+});
 
 router.get('/profile', async (req, res) => {
   try {

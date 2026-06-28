@@ -38,7 +38,8 @@ const analyzeImage = async (req, res) => {
       jobId,
       uid,
       imageS3Key,
-      city
+      city,
+      requestId: req.requestId
     });
 
     res.json({ success: true, data: { jobId, status: 'queued', message: 'Analysis started' } });

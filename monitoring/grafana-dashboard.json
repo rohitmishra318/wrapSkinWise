@@ -1,0 +1,25 @@
+{
+  "title": "SkinWise Dashboard",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "HTTP Requests per second",
+      "targets": [
+        { "expr": "rate(skinwise_backend_http_request_duration_seconds_count[1m])", "legendFormat": "Backend" },
+        { "expr": "rate(skinwise_python_requests_total[1m])", "legendFormat": "Python" },
+        { "expr": "rate(skinwise_sr_requests_total[1m])", "legendFormat": "SR" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Latency (p95)",
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(skinwise_backend_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "Backend p95" },
+        { "expr": "histogram_quantile(0.95, sum(rate(skinwise_python_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "Python p95" },
+        { "expr": "histogram_quantile(0.95, sum(rate(skinwise_sr_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "SR p95" }
+      ]
+    }
+  ],
+  "schemaVersion": 16,
+  "version": 1
+}

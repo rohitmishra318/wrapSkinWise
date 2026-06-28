@@ -16,4 +16,17 @@ const authLimiter = rateLimit({
     message: 'Too many login attempts. Please try again later.'
 });
 
-module.exports = { apiLimiter, authLimiter };
+// Limiter for expensive ML analysis endpoint, keyed by user UID
+const analyzeLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 10, // Limit each user to 10 analyses per hour
+    message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many analysis requests. Please try again later.' } },
+    keyGenerator: (req) => {
+      if (req.user && req.user.uid) return req.user.uid;
+      return req.ip || req.connection.remoteAddress || 'unknown';
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+module.exports = { apiLimiter, authLimiter, analyzeLimiter };
