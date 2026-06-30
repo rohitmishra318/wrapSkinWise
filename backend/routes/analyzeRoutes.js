@@ -22,7 +22,7 @@ router.get('/history', authMiddleware, async (req, res) => {
     const cacheKey = `cache:analysis:history:${req.user.uid}:${page}:${limit}`;
 
     const cached = await redisClient.get(cacheKey);
-    if (cached) return res.json(JSON.parse(cached));
+    if (cached) return res.json({ success: true, data: JSON.parse(cached) });
 
     const skip = (page - 1) * limit;
     const totalCount = await SkinAnalysis.countDocuments({ user: req.user.uid });
