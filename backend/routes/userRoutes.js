@@ -4,6 +4,8 @@ const User = require('../models/User');
 const DailyCheckin = require('../models/DailyCheckin');
 const redisClient = require('../config/redis');
 const { deleteUserAccount } = require('../services/userDeletionService');
+const validate = require('../middleware/validate');
+const { checkinSchema } = require('../schemas/userSchema');
 
 const router = express.Router();
 
@@ -58,7 +60,7 @@ router.put('/profile', async (req, res) => {
   res.json({ success: true });
 });
 
-router.post('/checkin', async (req, res) => {
+router.post('/checkin', validate(checkinSchema), async (req, res) => {
   try {
     const { sleepQuality, stressLevel, waterIntake, skinFeel, notes } = req.body;
     const uid = req.user.uid;

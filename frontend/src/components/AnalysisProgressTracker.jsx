@@ -9,9 +9,13 @@ const AnalysisProgressTracker = ({ jobId }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!jobId) return;
+    const token = localStorage.getItem('token');
+    
+    if (!jobId || !token) return;
 
-    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
+    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
+      auth: { token }
+    });
     
     socket.on('connect', () => {
       socket.emit('subscribe:job', { jobId });

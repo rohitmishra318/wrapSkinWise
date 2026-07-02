@@ -7,11 +7,102 @@ const Routine = require('../models/Routine');
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Routine
+ *   description: Skincare routine generation and tracking
+ */
+
 router.use(authMiddleware);
 
+/**
+ * @swagger
+ * /api/routine:
+ *   get:
+ *     summary: Get all active routines for the user
+ *     tags: [Routine]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of routines
+ */
 router.get('/', routineController.getRoutines);
+
+/**
+ * @swagger
+ * /api/routine/generate:
+ *   post:
+ *     summary: Generate a new skincare routine based on analysis
+ *     tags: [Routine]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               analysisId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Generated routine
+ */
 router.post('/generate', validate(generateRoutineSchema), routineController.createRoutineGeneration);
+
+/**
+ * @swagger
+ * /api/routine/{id}/complete:
+ *   post:
+ *     summary: Mark steps as complete in a routine
+ *     tags: [Routine]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Steps marked complete
+ */
 router.post('/:id/complete', routineController.completeSteps);
+
+/**
+ * @swagger
+ * /api/routine/{id}/reaction:
+ *   post:
+ *     summary: Log a reaction to a specific product in a routine
+ *     tags: [Routine]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Reaction logged
+ */
 router.post('/:id/reaction', validate(productReactionSchema), routineController.addReaction);
 
 router.put('/:id', async (req, res) => {

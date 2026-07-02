@@ -65,6 +65,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/wrapskinw
 }).then(() => logger.info('MongoDB connected'))
   .catch(err => logger.error('MongoDB connection error:', err));
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
+
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', userRoutes);
 app.use('/api/analyze', analyzeRoutes);
@@ -72,6 +75,9 @@ app.use('/api/routine', routineRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/admin/analytics', adminAnalyticsRoutes);
 app.use('/api/v1/partner', brandRoutes);
+
+// Swagger Documentation Route
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get('/metrics', async (req, res) => {
   res.set('Content-Type', register.contentType);

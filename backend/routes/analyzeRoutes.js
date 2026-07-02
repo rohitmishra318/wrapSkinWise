@@ -11,10 +11,108 @@ const { analyzeLimiter } = require('../middleware/ratelimiter');
 const router = express.Router();
 const upload = multer();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Analysis
+ *   description: Skin analysis and image processing
+ */
+
+/**
+ * @swagger
+ * /api/analyze:
+ *   post:
+ *     summary: Upload an image for skin analysis
+ *     tags: [Analysis]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *               city:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Analysis job queued successfully
+ */
 router.post('/', authMiddleware, analyzeLimiter, upload.single('image'), validate(analyzeQuerySchema), analyzeController.analyzeImage);
+
+/**
+ * @swagger
+ * /api/analyze/job/{jobId}:
+ *   get:
+ *     summary: Get the status of an analysis job
+ *     tags: [Analysis]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Job status retrieved
+ */
 router.get('/job/:jobId', authMiddleware, analyzeController.getJobStatus);
+
+/**
+ * @swagger
+ * /api/analyze/{id}/image/{type}:
+ *   get:
+ *     summary: Get a signed URL for an analysis image
+ *     tags: [Analysis]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: type
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [original, enhanced, annotated]
+ *     responses:
+ *       200:
+ *         description: Signed URL generated
+ */
 router.get('/:id/image/:type', authMiddleware, analyzeController.getAnalysisImage);
 
+/**
+ * @swagger
+ * /api/analyze/history:
+ *   get:
+ *     summary: Get a paginated history of user's past analyses
+ *     tags: [Analysis]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *     responses:
+ *       200:
+ *         description: Paginated history array
+ */
 router.get('/history', authMiddleware, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
