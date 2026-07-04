@@ -104,8 +104,51 @@ createBullBoard({
 });
 app.use('/admin/queues', serverAdapter.getRouter());
 
+const errorHandler = require('./middleware/errorHandler');
+app.use(errorHandler);
+
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
-  logger.info(`Bull-board UI available at http://localhost:${PORT}/admin/queues`);
-});
+if (require.main === module) {
+  server.listen(PORT, () => {
+    logger.info(`Server running on port ${PORT}`);
+    logger.info(`Bull-board UI available at http://localhost:${PORT}/admin/queues`);
+  });
+}
+
+const redisClient = require('./config/redis');
+
+const gracefulShutdown = () => {
+  logger.info('Received kill signal, shutting down gracefully...');
+  
+  server.close(async () => {
+    logger.info('HTTP server closed. Stopping background services...');
+    
+    try {
+      await mongoose.connection.close();
+      logger.info('MongoDB connection closed');
+      
+      await redisClient.quit();
+      logger.info('Redis connection closed');
+      
+      await analysisQueue.close();
+      logger.info('Bull queues closed');
+      
+      logger.info('Graceful shutdown complete.');
+      process.exit(0);
+    } catch (err) {
+      logger.error('Error during shutdown', { error: err.message });
+      process.exit(1);
+    }
+  });
+
+  // Force close if it takes more than 10 seconds
+  setTimeout(() => {
+    logger.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
+
+module.exports = app;
