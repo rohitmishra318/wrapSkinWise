@@ -4,8 +4,29 @@ const axios = require('axios');
 const router = express.Router();
 
 /**
- * GET /api/blogs?search=acne
- * GET /api/blogs        -> default skincare blogs
+ * @swagger
+ * tags:
+ *   name: Blogs
+ *   description: Blog content endpoints
+ */
+
+/**
+ * @swagger
+ * /api/blogs:
+ *   get:
+ *     summary: Get latest skincare blogs
+ *     tags: [Blogs]
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search query for blogs (default "skincare")
+ *     responses:
+ *       200:
+ *         description: List of latest blogs
+ *       500:
+ *         description: Server error
  */
 router.get('/', async (req, res) => {
   try {
