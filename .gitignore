@@ -5,8 +5,11 @@
 
 # Node
 node_modules/
+uploads/
 
 # Python
 venv/
+.venv/
 __pycache__/
 *.pyc
+
