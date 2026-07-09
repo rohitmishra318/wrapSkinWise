@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <filter id="paper" x="120" y="250" width="784" height="520" filterUnits="userSpaceOnUse">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="noise"/>
+      <feColorMatrix in="noise" type="saturate" values="0" result="mono"/>
+      <feComponentTransfer in="mono">
+        <feFuncA type="table" tableValues="0 0.04"/>
+      </feComponentTransfer>
+    </filter>
+    <linearGradient id="wash" x1="170" y1="400" x2="870" y2="660" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C8F6F2"/>
+      <stop offset="0.5" stop-color="#AEEDEA"/>
+      <stop offset="1" stop-color="#CFF8F4"/>
+    </linearGradient>
+    <filter id="softShadow" x="170" y="360" width="700" height="280" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+
+  <g opacity="0.98">
+    <path d="M156 474C214 424 330 382 459 349C593 315 718 300 791 309C815 312 836 319 840 336C844 355 831 374 839 389C847 404 873 403 880 417C891 438 870 466 880 486C889 505 914 510 917 528C921 556 884 575 844 580C784 587 727 590 672 607C603 627 538 657 470 685C407 712 346 739 287 738C254 738 223 727 211 699C198 668 214 630 194 598C182 578 158 572 153 553C149 538 152 523 161 511C172 497 172 487 156 474Z" fill="url(#wash)"/>
+    <rect x="120" y="250" width="784" height="520" rx="40" fill="url(#paper)" opacity="0.5"/>
+  </g>
+
+  <g stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" fill="none">
+    <path d="M251 408C322 287 460 235 583 240C709 245 816 321 857 454"/>
+    <path d="M235 602C272 700 350 789 496 806C647 823 772 736 811 592"/>
+  </g>
+
+  <g filter="url(#softShadow)">
+    <text x="512" y="560" text-anchor="middle"
+          font-family="Brush Script MT, Segoe Script, Lucida Handwriting, cursive"
+          font-size="145"
+          font-weight="400"
+          fill="#FFFFFF"
+          letter-spacing="1.2">SkinWise</text>
+  </g>
+</svg>

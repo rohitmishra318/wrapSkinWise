@@ -34,8 +34,9 @@ export default function Navbar() {
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
             <Link to="/" className="flex items-center gap-2 group">
-              <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center p-1.5 overflow-hidden transition-transform group-hover:scale-105">
-                <img src="/cyanlogo.png" alt="SkinWise Logo" className="w-full h-full object-contain brightness-0 invert" />
+              <div className="w-11 h-11 flex items-center justify-center overflow-hidden transition-transform group-hover:scale-105">
+                <img src="/cyanlogo-transparent.png" alt="SkinWise Logo" className="w-full h-full scale-150 object-contain dark:hidden" />
+                <img src="/skinwise-dark-logo.png" alt="SkinWise Logo" className="hidden w-full h-full scale-125 object-contain dark:block" />
               </div>
               <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white">SkinWise</span>
             </Link>
@@ -168,3 +169,13 @@ export default function Navbar() {
     </header>
   );
 }
+
+
+
+
+
+
+
+
+
+

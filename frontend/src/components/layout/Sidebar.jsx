@@ -24,8 +24,9 @@ export default function Sidebar({ className }) {
     <div className={cn("flex flex-col h-full bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 w-64", className)}>
       <div className="flex h-16 shrink-0 items-center px-6 border-b border-slate-100 dark:border-slate-800">
         <NavLink to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center p-1.5">
-            <img src="/cyanlogo.png" alt="SkinWise Logo" className="w-full h-full object-contain brightness-0 invert" />
+          <div className="w-10 h-10 flex items-center justify-center overflow-hidden">
+            <img src="/cyanlogo-transparent.png" alt="SkinWise Logo" className="w-full h-full scale-150 object-contain dark:hidden" />
+                <img src="/skinwise-dark-logo.png" alt="SkinWise Logo" className="hidden w-full h-full scale-125 object-contain dark:block" />
           </div>
           <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">SkinWise</span>
         </NavLink>
@@ -85,3 +86,13 @@ export default function Sidebar({ className }) {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
