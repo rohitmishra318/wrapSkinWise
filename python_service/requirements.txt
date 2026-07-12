@@ -14,7 +14,7 @@ filelock==3.29.4
 Flask==3.1.2
 flask-cors==6.0.1
 flatbuffers==25.9.23
-fonttools==4.61.1
+fonttools==4.63.0
 fsspec==2026.6.0
 google-auth==1.35.0
 google-auth-oauthlib==0.4.6
