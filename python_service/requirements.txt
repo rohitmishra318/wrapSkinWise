@@ -74,7 +74,7 @@ tensorboard-plugin-wit==1.8.1
 threadpoolctl==3.6.0
 tomli==2.4.1
 torch==1.13.1+cu117
-torchaudio==0.13.1+cu117
+torchaudio==2.11.0
 torchvision==0.14.1+cu117
 tqdm==4.67.1
 typing_extensions==4.15.0
