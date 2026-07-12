@@ -41,7 +41,7 @@ numba==0.65.1
 numpy==1.26.4
 opencv-contrib-python==4.11.0.86
 opencv-python==4.13.0.92
-opencv-python-headless==4.13.0.92
+opencv-python-headless==5.0.0.93
 opt_einsum==3.4.0
 packaging==26.2
 pillow==12.2.0
