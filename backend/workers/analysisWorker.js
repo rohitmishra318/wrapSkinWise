@@ -17,6 +17,7 @@ analysisQueue.process(async (job) => {
     // Step 1: Update job status
     await AnalysisJob.findOneAndUpdate({ jobId }, { status: 'sr_processing' });
     io.to(`job:${jobId}`).emit('job:status', { jobId, status: 'sr_processing', progress: 10 });
+    await job.progress(10);
 
     // Step 2: Download image from S3
     const imageBuffer = await downloadS3ToBuffer(imageS3Key);
@@ -53,6 +54,7 @@ analysisQueue.process(async (job) => {
 
     await AnalysisJob.findOneAndUpdate({ jobId }, { status: 'analyzing' });
     io.to(`job:${jobId}`).emit('job:status', { jobId, status: 'analyzing', progress: 40 });
+    await job.progress(40);
 
     // Step 5: Fetch weather
     const weatherData = await getWeather(city);
@@ -61,7 +63,7 @@ analysisQueue.process(async (job) => {
     const mlFormData = new FormData();
     mlFormData.append('image', finalImageBuffer, { filename: 'analyze.jpg' });
     if (requestId) mlFormData.append('requestId', requestId);
-    
+
     // Pass metadata
     const metadata = {
       contextHumidity: weatherData ? weatherData.humidity : null,
@@ -71,6 +73,7 @@ analysisQueue.process(async (job) => {
     mlFormData.append('metadata', JSON.stringify(metadata));
 
     io.to(`job:${jobId}`).emit('job:status', { jobId, status: 'analyzing', progress: 70 });
+    await job.progress(70);
 
     const pythonUrl = process.env.PYTHON_SERVICE_URL || 'http://localhost:7000';
     const mlResponse = await axios.post(`${pythonUrl}/analyze-image`, mlFormData, {
@@ -116,23 +119,25 @@ analysisQueue.process(async (job) => {
     await newAnalysis.save();
 
     // Step 9: Update analysis_jobs
-    await AnalysisJob.findOneAndUpdate({ jobId }, { 
-      status: 'complete', 
+    await AnalysisJob.findOneAndUpdate({ jobId }, {
+      status: 'complete',
       resultAnalysisId: newAnalysis._id,
       completedAt: new Date()
     });
 
     // Step 10: Emit complete
-    io.to(`job:${jobId}`).emit('job:complete', { 
-      jobId, 
-      analysisId: newAnalysis._id, 
+    io.to(`job:${jobId}`).emit('job:complete', {
+      jobId,
+      analysisId: newAnalysis._id,
       overallScore: newAnalysis.overallScore,
       delta: newAnalysis.delta
     });
+    await job.progress(100);
 
   } catch (error) {
     logger.error('Job failed', { ...logContext, error: error.message, stack: error.stack });
     await AnalysisJob.findOneAndUpdate({ jobId }, { status: 'failed', errorMessage: error.message });
     io.to(`job:${jobId}`).emit('job:failed', { jobId, error: error.message });
+    throw error;
   }
 });

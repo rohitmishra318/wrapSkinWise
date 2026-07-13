@@ -18,6 +18,7 @@ import ContactPage from './pages/ContactPage';
 import BlogPage from './pages/BlogPage';
 import ConsultationPage from './pages/ConsultationPage';
 import AdvicePage from './pages/AdvicePage';
+import ShopPage from './pages/public/ShopPage';
 
 // Auth Pages
 import LoginPage from './pages/auth/LoginPage';
@@ -88,6 +89,7 @@ function App() {
                 <Route path="/advice" element={<AdvicePage />} />
                 <Route path="/consultation" element={<ConsultationPage />} />
                 <Route path="/quiz" element={<QuizPage />} />
+                <Route path="/shop" element={<ShopPage />} />
               </Route>
 
               {/* --- Auth Layout --- */}

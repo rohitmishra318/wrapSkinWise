@@ -7,6 +7,27 @@ const SkinAnalysis = require('../models/SkinAnalysis');
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Admin Analytics
+ *   description: Administrative analytics endpoints
+ */
+
+/**
+ * @swagger
+ * /api/admin/analytics/overview:
+ *   get:
+ *     summary: Get detailed admin analytics overview
+ *     tags: [Admin Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Analytics payload
+ *       500:
+ *         description: Server error
+ */
 router.get(
   '/overview',
   authMiddleware,

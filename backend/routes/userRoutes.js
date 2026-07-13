@@ -4,11 +4,34 @@ const User = require('../models/User');
 const DailyCheckin = require('../models/DailyCheckin');
 const redisClient = require('../config/redis');
 const { deleteUserAccount } = require('../services/userDeletionService');
+const validate = require('../middleware/validate');
+const { checkinSchema } = require('../schemas/userSchema');
+
+/**
+ * @swagger
+ * tags:
+ *   name: Users
+ *   description: User profile and management endpoints
+ */
 
 const router = express.Router();
 
 router.use(authMiddleware);
 
+/**
+ * @swagger
+ * /api/users/account:
+ *   delete:
+ *     summary: Delete user account
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       204:
+ *         description: Account successfully deleted
+ *       500:
+ *         description: Server error
+ */
 router.delete('/account', async (req, res) => {
   try {
     const uid = req.user.uid;
@@ -19,6 +42,20 @@ router.delete('/account', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/users/profile:
+ *   get:
+ *     summary: Get user profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile retrieved successfully
+ *       500:
+ *         description: Server error
+ */
 router.get('/profile', async (req, res) => {
   try {
     const uid = req.user.uid;
@@ -54,11 +91,52 @@ router.get('/profile', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/users/profile:
+ *   put:
+ *     summary: Update user profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ */
 router.put('/profile', async (req, res) => {
   res.json({ success: true });
 });
 
-router.post('/checkin', async (req, res) => {
+/**
+ * @swagger
+ * /api/users/checkin:
+ *   post:
+ *     summary: Submit daily check-in
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               sleepQuality:
+ *                 type: string
+ *               stressLevel:
+ *                 type: string
+ *               waterIntake:
+ *                 type: string
+ *               skinFeel:
+ *                 type: string
+ *               notes:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Check-in saved
+ */
+router.post('/checkin', validate(checkinSchema), async (req, res) => {
   try {
     const { sleepQuality, stressLevel, waterIntake, skinFeel, notes } = req.body;
     const uid = req.user.uid;
@@ -85,6 +163,18 @@ router.post('/checkin', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/users/checkin/today:
+ *   get:
+ *     summary: Get today's check-in
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved today's check-in
+ */
 router.get('/checkin/today', async (req, res) => {
   try {
     const uid = req.user.uid;

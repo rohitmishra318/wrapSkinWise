@@ -8,7 +8,23 @@ const requireAdmin = require('../middleware/requireAdmin');
 const router = express.Router();
 
 /**
- * GET /api/admin/users
+ * @swagger
+ * tags:
+ *   name: Admin
+ *   description: Administrative endpoints
+ */
+
+/**
+ * @swagger
+ * /api/admin/users:
+ *   get:
+ *     summary: Get all users
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of users
  */
 router.get('/users', authMiddleware, requireAdmin, async (req, res) => {
   const users = await User.find().select('username email role createdAt');
@@ -16,7 +32,16 @@ router.get('/users', authMiddleware, requireAdmin, async (req, res) => {
 });
 
 /**
- * GET /api/admin/stats
+ * @swagger
+ * /api/admin/stats:
+ *   get:
+ *     summary: Get platform stats
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Platform statistics
  */
 router.get('/stats', authMiddleware, requireAdmin, async (req, res) => {
   const totalUsers = await User.countDocuments();
@@ -29,7 +54,31 @@ router.get('/stats', authMiddleware, requireAdmin, async (req, res) => {
 });
 
 /**
- * PATCH /api/admin/user/:id/role
+ * @swagger
+ * /api/admin/user/{id}/role:
+ *   patch:
+ *     summary: Update user role
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               role:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Role updated
  */
 router.patch('/user/:id/role', authMiddleware, requireAdmin, async (req, res) => {
   const { role } = req.body;
