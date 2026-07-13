@@ -44,7 +44,7 @@ export default function DashboardLayout() {
             >
               <Menu size={24} />
             </button>
-            <span className="ml-2 font-bold text-lg text-slate-900 dark:text-white">SkinWise</span>
+            <div className="ml-2 flex items-center gap-2"><div className="w-10 h-10 flex items-center justify-center overflow-hidden"><img src="/cyanlogo-transparent.png" alt="SkinWise Logo" className="w-full h-full scale-150 object-contain dark:hidden" /><img src="/skinwise-dark-logo.png" alt="SkinWise Logo" className="hidden w-full h-full scale-125 object-contain dark:block" /></div><span className="font-bold text-lg text-slate-900 dark:text-white">SkinWise</span></div>
           </div>
 
           {/* Desktop invisible spacer, mobile full header flex container */}
@@ -113,3 +113,5 @@ export default function DashboardLayout() {
     </div>
   );
 }
+
+

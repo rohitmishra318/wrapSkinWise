@@ -32,20 +32,24 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 space-y-8">
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Link to="/analyze" className="group bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-emerald-200 dark:hover:border-emerald-800 transition-all">
-              <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/30 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-4 group-hover:scale-110 transition-transform">
+            <Link to="/analyze" className="group bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-emerald-200 dark:hover:border-emerald-800 transition-all flex items-center gap-4 min-h-[124px] pt-6 pb-4">
+              <div className="w-12 h-12 shrink-0 bg-emerald-50 dark:bg-emerald-900/30 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
                 <Camera size={24} />
               </div>
-              <h3 className="font-bold text-lg mb-1">New Analysis</h3>
-              <p className="text-sm text-gray-500">Scan your face to update your routine.</p>
+              <div className="flex-1">
+                <h3 className="font-bold text-lg mb-1">New Analysis</h3>
+                <p className="text-sm text-gray-500">Scan your face to update your routine.</p>
+              </div>
             </Link>
             
-            <Link to="/routine" className="group bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800 transition-all">
-              <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4 group-hover:scale-110 transition-transform">
+            <Link to="/routine" className="group bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800 transition-all flex items-center gap-4 min-h-[124px] pt-6 pb-4">
+              <div className="w-12 h-12 shrink-0 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
                 <CalendarCheck size={24} />
               </div>
-              <h3 className="font-bold text-lg mb-1">Today's Routine</h3>
-              <p className="text-sm text-gray-500">View and complete your daily steps.</p>
+              <div className="flex-1">
+                <h3 className="font-bold text-lg mb-1">Today's Routine</h3>
+                <p className="text-sm text-gray-500">View and complete your daily steps.</p>
+              </div>
             </Link>
           </div>
 
@@ -85,3 +89,9 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+
+
+
+
+

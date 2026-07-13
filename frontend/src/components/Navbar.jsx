@@ -75,13 +75,18 @@ const Navbar = () => {
             {/* CENTER COLUMN — LOGO */}
             <div className="w-1/3 flex justify-center items-center">
               <Link to="/" className="flex items-center">
-                <div className="w-20 h-20 rounded-full bg-white dark:bg-gray-100 shadow-sm flex items-center justify-center overflow-hidden">
-                  <img
-                    src="/cyanlogo.png"
-                    alt="SkinWise Logo"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
+                <div className="w-10 h-10 rounded-full bg-white dark:bg-transparent shadow-sm dark:shadow-none flex items-center justify-center overflow-hidden">
+  <img
+    src="/cyanlogo-transparent.png"
+    alt="SkinWise Logo"
+    className="w-full h-full object-contain dark:hidden"
+  />
+  <img
+    src="/skinwise-dark-logo.png"
+    alt="SkinWise Logo"
+    className="hidden w-full h-full scale-90 object-contain dark:block"
+  />
+</div>
               </Link>
             </div>
 
@@ -200,3 +205,14 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
+
+
+
+
+
+
+
+
+
+

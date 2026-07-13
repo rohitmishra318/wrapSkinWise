@@ -53,7 +53,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Link to="/analyze" className="group block">
               <Card className="h-full hover:border-violet-300 dark:hover:border-violet-700 transition-colors cursor-pointer">
-                <CardContent className="p-6 flex items-start space-x-4">
+                <CardContent className="p-6 min-h-[124px] pt-6 pb-4 flex items-center space-x-4">
                   <div className="w-12 h-12 bg-violet-100 dark:bg-violet-900/30 rounded-xl flex items-center justify-center text-violet-600 dark:text-violet-400 group-hover:scale-110 transition-transform">
                     <Camera size={24} />
                   </div>
@@ -67,7 +67,7 @@ export default function DashboardPage() {
             
             <Link to="/routine" className="group block">
               <Card className="h-full hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors cursor-pointer">
-                <CardContent className="p-6 flex items-start space-x-4">
+                <CardContent className="p-6 min-h-[124px] pt-6 pb-4 flex items-center space-x-4">
                   <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
                     <CalendarCheck size={24} />
                   </div>
@@ -124,3 +124,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+
+
+
