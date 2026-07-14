@@ -82,4 +82,136 @@ pip install -r requirements.txt
 python app.py
 ```
 
+## 📊 SkinWise Architecture & Data Flow Diagrams
 
+Here are some architecture diagrams to help you understand the internal working and features of the SkinWise project.
+
+---
+
+### 1. High-Level System Architecture
+This diagram shows all the services running in the SkinWise ecosystem and how they interact.
+
+```mermaid
+graph TD
+    %% Clients
+    Client(Mobile/Web Client)
+    Partner(Brand Partner / B2B)
+
+    %% Backend Services
+    subgraph NodeBackend [Node.js Backend]
+        API[Express API Gateway]
+        Socket[Socket.IO Server]
+        Worker[BullMQ Worker]
+    end
+
+    %% External & ML Services
+    subgraph PythonPipeline [Python ML Pipeline]
+        SR[SR Service Flask]
+        ML[Python Service Flask]
+    end
+
+    %% Databases & Queues
+    Mongo[(MongoDB)]
+    Redis[(Redis Cache / Bull)]
+    S3[(AWS S3)]
+    Auth[Firebase Auth]
+
+    %% Connections
+    Client -->|REST API Requests| API
+    Client -->|Real-time Updates| Socket
+    Socket -->|Real-time Updates| Client
+    Partner -->|API Key Auth| API
+    
+    API -->|Validates Token| Auth
+    API -->|Read/Write| Mongo
+    API -->|Cache / Rate Limit| Redis
+    API -->|Upload Image| S3
+    API -->|Push ML Job| Redis
+    
+    Redis -->|Pull Job| Worker
+    Worker -->|1. Image Enhancment| SR
+    Worker -->|2. Analysis| ML
+    Worker -->|Save Results| Mongo
+    Worker -->|Emit Progress| Socket
+```
+
+---
+
+### 2. The Asynchronous ML Inference Pipeline
+This sequence diagram shows the non-blocking asynchronous analysis workflow.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Express as Node.js API
+    participant S3 as AWS S3
+    participant Redis as Redis / Bull Queue
+    participant Worker as Background Worker
+    participant ML as Python ML Services
+    participant Socket as Socket.IO
+
+    User->>Express: POST /api/analyze (Image Upload)
+    Express->>S3: Save Image
+    Express->>Redis: Enqueue Analysis Job
+    Express-->>User: 202 Accepted (Returns JobID)
+    
+    Note over User, Express: User HTTP request closes, preventing blocking
+    
+    Redis->>Worker: Dequeue Job
+    Worker->>Socket: Emit 10% Progress (Started)
+    Socket-->>User: Real-time update
+    
+    Worker->>ML: Send to SR Service (Super Resolution)
+    Worker->>Socket: Emit 40% Progress (Enhanced)
+    
+    Worker->>ML: Send to Python Service (Analysis)
+    ML-->>Worker: Return Acne, Score, Severity Data
+    Worker->>Socket: Emit 70% Progress (Analyzed)
+    
+    Worker->>Worker: Save Results to MongoDB
+    Worker->>Socket: Emit 100% Progress (Completed) + Results
+    Socket-->>User: UI updates with final analysis
+```
+
+---
+
+### 3. Skincare Routine Generation Flow
+This diagram shows how user data and analysis results are fed into the LLM to generate personalized routines.
+
+```mermaid
+graph LR
+    A[User Profile & Allergies] --> D
+    B[Latest Skin Analysis] --> D
+    C[Daily Check-in Data] --> D
+    
+    subgraph RoutineEngine [Routine Engine]
+        D[Routine Controller] -->|Construct Prompt| E(Anthropic API / Claude)
+        E -->|Return JSON| F[Parse & Validate]
+    end
+    
+    F -->|Save| G[(MongoDB)]
+    G --> H[User Dashboard]
+```
+
+---
+
+### 4. B2B Brand Partner Ecosystem
+This diagram illustrates the multi-tenancy and data aggregation features built for skincare brands.
+
+```mermaid
+graph TD
+    Brand[Brand Partner] -->|POST /api/v1/partner/validate-key| API[Express API]
+    API -->|Check Hash| DB[(MongoDB)]
+    
+    Brand -->|GET /analytics/skin-distribution| Aggregator[MongoDB Aggregation Pipeline]
+    
+    subgraph DataAnonymization [Data Anonymization]
+        DB --> Aggregator
+        Aggregator -->|Group by Acne/Wrinkles| Cohort[Cohort Analytics]
+    end
+    
+    Cohort -->|Return JSON| Brand
+    
+    Brand -->|POST /recommend| RecEngine[Recommendation Engine]
+    RecEngine -->|Match Ingredients to Skin Profile| Brand
+```
