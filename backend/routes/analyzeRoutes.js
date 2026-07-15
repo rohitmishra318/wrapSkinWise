@@ -88,7 +88,7 @@ router.get('/job/:jobId', authMiddleware, analyzeController.getJobStatus);
  *       200:
  *         description: Signed URL generated
  */
-router.get('/:id/image/:type', authMiddleware, analyzeController.getAnalysisImage);
+router.get('/:id/image/:type', analyzeController.getAnalysisImage);
 
 /**
  * @swagger

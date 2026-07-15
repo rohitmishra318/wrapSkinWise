@@ -75,7 +75,7 @@ const getAnalysisImage = async (req, res) => {
     if (!key) return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Image key not found' } });
 
     const url = await getSignedS3Url(key);
-    res.json({ success: true, data: { url } });
+    res.redirect(url);
   } catch (error) {
     res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
   }
